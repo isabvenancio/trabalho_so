@@ -3,6 +3,13 @@
 #include <string.h> /* string */
 #include "alocator.h"
 
+/*
+git status
+git add .
+git commit -m "descricao da alteracao"
+git push
+*/
+
 /* funções principais */
 void mem_init(size_t heap_size){
     /* inicializa o heap com o tamanho e o primeiro bloco livre */
