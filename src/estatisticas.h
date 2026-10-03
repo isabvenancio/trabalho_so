@@ -1,15 +1,7 @@
 #include <stdio.h>
-#include "alocator.h"
+#include "alocador.h"
 #ifndef ESTATISTICAS_H
 #define ESTATISTICAS_H
-
-typedef enum { FIRST_FIT, BEST_FIT, WORST_FIT } Estrategia;
-
-Bloco *buscar_first_fit(Bloco *inicio, size_t tam, size_t *examinados);
-Bloco *buscar_best_fit (Bloco *inicio, size_t tam, size_t *examinados);
-Bloco *buscar_worst_fit(Bloco *inicio, size_t tam, size_t *examinados);
-typedef Bloco *(*FuncaoBusca)(Bloco *, size_t, size_t *);
-static FuncaoBusca buscar; /* definida em mem_init conforme a estratégia */
 
 typedef struct {
     size_t total_livre, total_ocupado, maior_livre;

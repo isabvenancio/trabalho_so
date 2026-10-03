@@ -15,7 +15,7 @@ static size_t heap_total = 0;
 static Bloco *primeiro = NULL; /* cabeça da lista implícita */
 
 /* funções principais */
-void mem_init(size_t heap_size) {
+void meu_init(size_t heap_size) {
     /* inicializa o heap com o tamanho e o primeiro bloco livre */
     heap_base = malloc(heap_size); /* ÚNICO uso do malloc real */
     if (heap_base == NULL) {
@@ -30,14 +30,14 @@ void* meu_malloc(size_t tamanho){
     /* coordena alinhamento, busca, splitting*/
     /* retorna ponteiro para o bloco alocado */
     if (tamanho == 0) return NULL;
-    size_t tam = ALINHAR(tamanho);
+    size_t tamanho_alinhado = ALINHAR(tamanho);
     size_t exam = 0;
-    Bloco *b = buscar(primeiro, tam, &exam);
+    Bloco *bloco = buscar(primeiro, tamanho_alinhado, &exam);
 
     /* TODO: registrar ’exam’ nas estatísticas */
     /* TODO: se b == NULL, contabilizar falha e devolver NULL */
     /* TODO: marcar ocupado, guardar ’tamanho’ em b->pedido */
-    return (char *)b + TAM_CAB;
+    return (char *)bloco + TAM_CAB;
 }
 
 void meu_free(void* ptr){
@@ -49,7 +49,7 @@ void meu_free(void* ptr){
         fprintf(stderr, "ERRO: ponteiro fora do heap\n");
         return;
     }
-    Bloco *b = (Bloco *)(p - TAM_CAB);
+    Bloco *bloco = (Bloco *)(p - TAM_CAB);
     /* TODO: confirmar que b é realmente um bloco da lista */
     /* TODO: se b->livre, reportar double free e retornar */
     /* TODO: marcar como livre */
@@ -62,8 +62,8 @@ void mem_stats(void){
 void mem_dump(void){
     /* exibe o estado atual da memória (blocos atuais)*/
     printf("%-10s %-8s %s\n", "Endereco", "Tamanho", "Estado");
-    for (Bloco *b = primeiro; b != NULL; b = b->proximo) {
-        size_t off = (size_t)((char *)b - heap_base);
+    for (Bloco *bloco = primeiro; bloco != NULL; bloco = bloco->proximo) {
+        size_t off = (size_t)((char *)bloco - heap_base);
         /* TODO: imprimir off, b->tamanho e LIVRE/OCUPADO */
     }
 }
