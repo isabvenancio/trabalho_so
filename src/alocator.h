@@ -1,6 +1,10 @@
 #include <stdio.h>
 #ifndef ALOCADOR_H
 #define ALOCADOR_H
+#define ALINHAMENTO 8
+#define ALINHAR(n) (((n) + (ALINHAMENTO - 1)) & ~(size_t)(ALINHAMENTO - 1))
+#define TAM_CAB ALINHAR(sizeof(Bloco))
+#define MIN_DADOS 8 /* menor área de dados que vale a pena criar */
 
 typedef struct bloco {
     size_t tamanho;
