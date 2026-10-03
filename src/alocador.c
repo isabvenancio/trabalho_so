@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* malloc e free */
 #include <string.h> /* string */
-#include "alocator.h"
+#include "alocador.h"
 
 /*
 git status
@@ -15,15 +15,30 @@ static size_t heap_total = 0;
 static Bloco *primeiro = NULL; /* cabeça da lista implícita */
 
 /* funções principais */
-void meu_init(size_t heap_size) {
+void mem_init(size_t heap_size) {
+    if (heap_size < TAM_CAB + MIN_DADOS) {
+        fprintf(stderr, "ERRO: tamanho do heap insuficiente\n");
+        return;
+    }
     /* inicializa o heap com o tamanho e o primeiro bloco livre */
     heap_base = malloc(heap_size); /* ÚNICO uso do malloc real */
+
     if (heap_base == NULL) {
-            /* TODO: reportar erro */ 
+        /* TODO: reportar erro */ 
+        fprintf(stderr, "ERRO: nao foi possivel alocar o heap\n");
+        heap_total = 0;
+        primeiro = NULL;
+        return;
         }
     heap_total = heap_size;
     primeiro = (Bloco *) heap_base;
     /* TODO: preencher tamanho, livre, proximo e anterior */
+
+    primeiro->tamanho = heap_size - TAM_CAB;
+    primeiro->pedido = 0;
+    primeiro->livre = 1;
+    primeiro->proximo = NULL;
+    primeiro->anterior = NULL;
 }
 
 void* meu_malloc(size_t tamanho){
@@ -32,7 +47,7 @@ void* meu_malloc(size_t tamanho){
     if (tamanho == 0) return NULL;
     size_t tamanho_alinhado = ALINHAR(tamanho);
     size_t exam = 0;
-    Bloco *bloco = buscar(primeiro, tamanho_alinhado, &exam);
+    Bloco *bloco = buscar_first_fit(primeiro, tamanho_alinhado, &exam);
 
     /* TODO: registrar ’exam’ nas estatísticas */
     /* TODO: se b == NULL, contabilizar falha e devolver NULL */
@@ -64,27 +79,13 @@ void mem_dump(void){
     printf("%-10s %-8s %s\n", "Endereco", "Tamanho", "Estado");
     for (Bloco *bloco = primeiro; bloco != NULL; bloco = bloco->proximo) {
         size_t off = (size_t)((char *)bloco - heap_base);
+        
         /* TODO: imprimir off, b->tamanho e LIVRE/OCUPADO */
+        printf("%-10zu %-8zu %s\n", off, bloco->tamanho, bloco->livre ? "LIVRE" : "OCUPADO");
+        // -10zu exibe o deslocamento do bloco em relação ao início do heap, -8zu exibe o tamanho do bloco, e %s exibe se o bloco está livre ou ocupado
     }
 }
 
-/* funções auxiliares */
-Bloco* buscar_first_fit(size_t tamanho){
-
-}
-
-Bloco* buscar_best_fit(size_t tamanho){
-    Bloco *melhor = NULL;
-    //for (Bloco *b = inicio; b != NULL; b = b->proximo) {
-        //(*examinados)++;
-        /* TODO: se b é candidato e é melhor que ’melhor’, atualize */
-    //}
-    return melhor;
-}
-
-Bloco* buscar_worst_fit(size_t tamanho){
-
-}
 
 static void splitting(Bloco* bloco, size_t tamanho){
     if (bloco->tamanho < tamanho + TAM_CAB + MIN_DADOS)

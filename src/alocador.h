@@ -22,7 +22,7 @@ typedef enum status_aloc {
     ALOC_ERRO_FRAGMENTACAO
 } AlocStatus;
 
-void meu_init(size_t heap_size);
+void mem_init(size_t heap_size);
 void* meu_malloc(size_t tamanho);
 void meu_free(void* ptr);
 void mem_stats(void);
