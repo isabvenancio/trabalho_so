@@ -14,7 +14,6 @@ typedef struct bloco {
     struct bloco *anterior;
 } Bloco;
 
-
 typedef enum status_aloc {
     ALOC_SUCESSO,
     ALOC_ERRO_MEMORIA_INSUFICIENTE,

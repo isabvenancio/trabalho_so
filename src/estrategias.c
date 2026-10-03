@@ -13,7 +13,7 @@ Bloco *buscar_first_fit(Bloco *inicio, size_t tam, size_t *examinados){
 }
 
 Bloco *buscar_next_fit(Bloco *inicio, size_t tam, size_t *examinados){
-    
+
 }
 
 Bloco* buscar_best_fit(Bloco *inicio, size_t tam, size_t *examinados){
