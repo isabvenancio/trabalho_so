@@ -11,4 +11,6 @@ typedef struct {
     size_t blocos_examinados; /* soma das buscas */
 } Estatisticas;
 
+extern Estatisticas estatisticas; // variável global para armazenar as estatísticas da memória
+
 #endif // ESTATISTICAS_H

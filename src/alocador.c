@@ -1,9 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h> /* malloc e free */
 #include <string.h> /* string */
+<<<<<<< HEAD
 #include "alocator.h"
 #include "estatisticas.h"
 #include "estrategia.h"
+=======
+#include "alocador.h"
+#include "estrategias.h"
+#include "estatisticas.h"
+>>>>>>> d17dca4 (Enhance memory allocation strategies: implement dynamic strategy selection and update statistics tracking)
 
 /*
 git status
@@ -49,18 +55,32 @@ void* meu_malloc(size_t tamanho){
     if (tamanho == 0) return NULL;
     size_t tamanho_alinhado = ALINHAR(tamanho);
     size_t exam = 0;
-    Bloco *bloco = buscar_first_fit(primeiro, tamanho_alinhado, &exam);
+    Bloco *bloco = buscar(primeiro, tamanho_alinhado, &exam);
 
+<<<<<<< HEAD
     estatisticas.n_malloc++;
     estatisticas.blocos_examinados += exam;
 
+=======
+    /* TODO: registrar ’exam’ nas estatísticas */
+    estatisticas.n_malloc++;
+    estatisticas.blocos_examinados += exam;
+
+    /* TODO: se b == NULL, contabilizar falha e devolver NULL */
+>>>>>>> d17dca4 (Enhance memory allocation strategies: implement dynamic strategy selection and update statistics tracking)
     if (bloco == NULL) {
         estatisticas.n_falhas++;
         return NULL;
     }
 
     splitting(bloco, tamanho_alinhado);
+<<<<<<< HEAD
     
+    bloco->livre = 0;
+    bloco->pedido = tamanho;
+
+=======
+    /* TODO: marcar ocupado, guardar ’tamanho’ em b->pedido */
     bloco->livre = 0;
     bloco->pedido = tamanho;
 
@@ -103,9 +123,19 @@ static void splitting(Bloco* bloco, size_t tamanho){
     if (bloco->tamanho < tamanho + TAM_CAB + MIN_DADOS)
         return; /* sobra pequena: não divide */
     Bloco *novo = (Bloco *)((char *)bloco + TAM_CAB + tamanho);
-    novo->tamanho = /* TODO */
+    novo->tamanho = bloco->tamanho - tamanho - TAM_CAB;/* TODO */
+    novo->pedido = 0;
     novo->livre = 1;
+
     /* TODO: encadear ’novo’ entre bloco e bloco->proximo (4 ponteiros!) */
+    novo->proximo = bloco->proximo;
+    novo->anterior = bloco;
+
+    if (bloco->proximo != NULL)
+        bloco->proximo->anterior = novo;
+
+    bloco->proximo = novo;
+
     bloco->tamanho = tamanho;
 }
 
