@@ -1,15 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h> /* malloc e free */
 #include <string.h> /* string */
-<<<<<<< HEAD
-#include "alocator.h"
-#include "estatisticas.h"
-#include "estrategia.h"
-=======
 #include "alocador.h"
 #include "estrategias.h"
 #include "estatisticas.h"
->>>>>>> d17dca4 (Enhance memory allocation strategies: implement dynamic strategy selection and update statistics tracking)
 
 /*
 git status
@@ -57,29 +51,25 @@ void* meu_malloc(size_t tamanho){
     size_t exam = 0;
     Bloco *bloco = buscar(primeiro, tamanho_alinhado, &exam);
 
-<<<<<<< HEAD
+    /* TODO: registrar ’exam’ nas estatísticas */
     estatisticas.n_malloc++;
     estatisticas.blocos_examinados += exam;
 
-=======
     /* TODO: registrar ’exam’ nas estatísticas */
     estatisticas.n_malloc++;
     estatisticas.blocos_examinados += exam;
 
     /* TODO: se b == NULL, contabilizar falha e devolver NULL */
->>>>>>> d17dca4 (Enhance memory allocation strategies: implement dynamic strategy selection and update statistics tracking)
     if (bloco == NULL) {
         estatisticas.n_falhas++;
         return NULL;
     }
 
     splitting(bloco, tamanho_alinhado);
-<<<<<<< HEAD
     
     bloco->livre = 0;
     bloco->pedido = tamanho;
 
-=======
     /* TODO: marcar ocupado, guardar ’tamanho’ em b->pedido */
     bloco->livre = 0;
     bloco->pedido = tamanho;
