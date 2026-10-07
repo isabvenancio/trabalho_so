@@ -1,0 +1,5 @@
+algoritmo,fragmentacao_interna,fragmentacao_externa,operacoes_alocacao,taxa_falha,tempo_execucao
+first_fit,12,4,150,0.02,0.91
+next_fit,15,7,148,0.03,0.89
+best_fit,10,3,142,0.01,0.88
+worst_fit,18,9,160,0.04,1.12

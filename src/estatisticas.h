@@ -14,3 +14,7 @@ typedef struct {
 extern Estatisticas estatisticas; // variável global para armazenar as estatísticas da memória
 
 #endif // ESTATISTICAS_H
+
+// workload1.c
+// workload2.c ─> comparativo.csv ─> Jupyter Notebook ─> tabelas + gráficos
+// workload3.c

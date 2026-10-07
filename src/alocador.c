@@ -129,7 +129,7 @@ static void splitting(Bloco* bloco, size_t tamanho){
     bloco->tamanho = tamanho;
 }
 
-static void coalescencia(Bloco *a, Bloco *b) {
+static void coalescencia(Bloco *a, Bloco *b) { //próximo passo
     /* pré-condição: a e b livres e b == a->proximo */
     a->tamanho += TAM_CAB + b->tamanho;
     /* TODO: religar a->proximo e o ’anterior’ do seguinte de b */
