@@ -34,8 +34,31 @@ Bloco *buscar_first_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
     return NULL;
 }
 
-Bloco *buscar_next_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
+static Bloco *ultimo_next_fit = NULL; /* onde a última busca next-fit parou */
 
+void reiniciar_next_fit(void){
+    ultimo_next_fit = NULL;
+}
+
+Bloco *buscar_next_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
+    if (inicio == NULL){
+        return NULL;
+    }
+    Bloco *partida = (ultimo_next_fit != NULL) ? ultimo_next_fit : inicio;
+    Bloco *bloco = partida;
+
+    /* percorre a lista de forma circular, dando no máximo uma volta completa */
+    do {
+        (*examinados)++;
+
+        if (bloco->livre && bloco->tamanho >= tamanho){
+            ultimo_next_fit = bloco; // a próxima busca recomeça deste bloco
+            return bloco;
+        }
+        bloco = (bloco->proximo != NULL) ? bloco->proximo : inicio;
+    } while (bloco != partida);
+
+    return NULL;
 }
 
 Bloco* buscar_best_fit(Bloco *inicio, size_t tamanho, size_t *examinados){

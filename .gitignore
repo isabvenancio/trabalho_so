@@ -1,0 +1,7 @@
+build/
+*.o
+*.d
+alocador
+testes
+workload[123]
+__pycache__/
