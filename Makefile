@@ -1,7 +1,8 @@
 #compilador e flags
 CC      = gcc
 CFLAGS  = -Wall -Wextra -g -std=c11 -MMD -MP -Isrc
-BUILD   = build #objetovs vao para build/src e build/benchmarks
+#objetovs vao para build/src e build/benchmarks
+BUILD   = build
 
 # biblioteca do alocador (tudo menos os programas com main)
 # arquivos fontes e objetos
@@ -12,16 +13,22 @@ OBJS = $(SRCS:%.c=$(BUILD)/%.o)
 CSV       ?= resultados/comparativo.csv
 EXEC      = alocador
 TESTES    = testes
+DRIVER    = driver
 WORKLOADS = workload1 workload2 workload3
-BINS      = $(EXEC) $(TESTES) $(WORKLOADS) # arquivos executáveis "target" que serão gerados
 
-.PHONY: all test bench analise sanitize clean
+# arquivos executáveis "target" que serão gerados
+BINS      = $(EXEC) $(TESTES) $(DRIVER) $(WORKLOADS)
+
+.PHONY: all test exemplos bench analise sanitize clean
 all: $(EXEC)
 
 $(EXEC): $(BUILD)/src/main.o $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 $(TESTES): $(BUILD)/src/testes.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(DRIVER): $(BUILD)/src/driver.o $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 # workloadN -> benchmarks/workloadN.c
@@ -35,6 +42,15 @@ $(BUILD)/%.o: %.c
 # make test -> roda os testes obrigatórios
 test: $(TESTES)
 	./$(TESTES)
+
+# make exemplos -> roda cada exemplos/entradaN.txt e compara com exemplos/saidaN.txt
+exemplos: $(DRIVER)
+	@ok=0; falha=0; \
+	for e in exemplos/entrada*.txt; do \
+	  s=$$(echo $$e | sed 's/entrada/saida/'); \
+	  if ./$(DRIVER) $$e 2>&1 | diff -u $$s - > /dev/null; then echo "OK    $$e"; ok=$$((ok+1)); \
+	  else echo "FALHA $$e"; ./$(DRIVER) $$e 2>&1 | diff -u $$s - | head -20; falha=$$((falha+1)); fi; \
+	done; echo "$$ok ok, $$falha falha(s)"; [ $$falha -eq 0 ]
 
 # make bench -> roda os 3 workloads (cada um acrescenta linhas em resultados/comparativo.csv)
 bench: $(WORKLOADS)
@@ -53,4 +69,4 @@ sanitize:
 clean:
 	rm -rf $(BUILD) $(BINS)
 
--include $(OBJS:.o=.d) $(BUILD)/src/main.d $(BUILD)/src/testes.d $(WORKLOADS:%=$(BUILD)/benchmarks/%.d)
+-include $(OBJS:.o=.d) $(BUILD)/src/main.d $(BUILD)/src/testes.d $(BUILD)/src/driver.d $(WORKLOADS:%=$(BUILD)/benchmarks/%.d)

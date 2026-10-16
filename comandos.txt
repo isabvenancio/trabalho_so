@@ -1,0 +1,7 @@
+# comando argumento
+ALLOC 100
+ALLOC 200
+ALLOC 50
+FREE 2
+ALLOC 120
+DUMP

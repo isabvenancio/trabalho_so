@@ -16,7 +16,6 @@ workload3.c ┘
 
 # python3 src/analise.py resultados/teste/comparativo.csv
 
-import sys
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')  # sem janela: os gráficos são salvos em resultados/
@@ -25,9 +24,8 @@ import numpy as np
 import pandas as pd
 
 raiz = Path(__file__).resolve().parent.parent
-# uso: python3 src/analise.py [arquivo.csv] -> com CSV alternativo, as saídas vão para a pasta dele
-arq = Path(sys.argv[1]) if len(sys.argv) > 1 else raiz / 'resultados' / 'comparativo.csv' #entrada dos arquivos
-saida = arq.parent #saida dos arquivos
+arq = raiz / 'resultados' / 'comparativo.csv' #entrada dos arquivos
+saida = raiz / 'resultados' #saida dos arquivos
 
 def salvar(nome): #salvar os png na saida e não em janelas
     plt.tight_layout()
@@ -57,31 +55,34 @@ df.head()
 # ----------------- MÉTRICAS DERIVADAS (frag interna, frag externa e taxa de falha de alocação) -----------------
 # Fragmentação externa = 1 - maior_livre / total_livre
 if {'maior_livre', 'total_livre'}.issubset(df.columns):
-    df['frag_externa'] = np.where(df['total_livre'] > 0, 1 - (df['maior_livre'] / df['total_livre']), 0)
+    df['frag_externa'] = np.where(df['total_livre'] > 0, 1 - (df['maior_livre'] / df['total_livre']), 0) #o total_livre precisa ser maior q zero (condição), ai vem a formula (true), senao o resultado é zero (false)
 
-# Operações (blocos examinados) por alocação
+# Operações (blocos examinados) por alocação = blocos_examinados / alocacoes_ok
 if {'blocos_examinados', 'alocacoes_ok'}.issubset(df.columns):
-    df['examinados_por_alocacao'] = np.where(df['alocacoes_ok'] > 0, df['blocos_examinados'] / df['alocacoes_ok'], np.nan)
+    df['examinados_por_alocacao'] = np.where(df['alocacoes_ok'] > 0, df['blocos_examinados'] / df['alocacoes_ok'], np.nan) #o alocacoes_ok precisa ser maior q zero (condicao), ai vem a formula (true), senao o resultado é nulo/Nan (false)
 
-# Taxa de falha da alocação (%)
+# Taxa de falha da alocação (%) = (falhas / operacoes) * 100
 if {'falhas', 'operacoes'}.issubset(df.columns):
-    df['taxa_falha'] = np.where(df['operacoes'] > 0, 100 * df['falhas'] / df['operacoes'], 0)
+    df['taxa_falha'] = np.where(df['operacoes'] > 0, 100 * df['falhas'] / df['operacoes'], 0) #operacoes precisa ser maior q zero (condicao), ai vem a formula (true), senao o resultado da taxa é 0% (false)
 
 print('Métricas derivadas')
 print(df.head())
 
 print('Resumo por workload e estratégia')
-print(df.groupby(['workload', 'estrategia']).agg({
-    'alocacoes_ok': 'sum',
+print(df.groupby(['workload', 'estrategia']).agg({ #groupby com função sum e mean
+    'alocacoes_ok': 'sum', #soma
     'falhas': 'sum',
-    'frag_externa': 'mean',
+    'frag_externa': 'mean', #media
     'examinados_por_alocacao': 'mean',
 }).reset_index())
 
 # ---------------------- WORKLOAD 1 - ALOCAÇÕES SEQUENCIAS--------------------------
 print('Workload 1 - alocações sequenciais')
 w1 = df[df['workload'] == 'workload1'].copy()
-print(w1.groupby('estrategia').agg({'alocacoes_ok': 'sum', 'frag_interna': 'max'}).reset_index())
+print(w1.groupby('estrategia').agg({ #groupby com funcao sum e maximo
+    'alocacoes_ok': 'sum', 
+    'frag_interna': 'max'
+}).reset_index())
 
 plt.figure(figsize=(8, 5))
 for estrategia, grupo in w1.groupby('estrategia'):
@@ -97,7 +98,7 @@ w2 = df[df['workload'] == 'workload2'].copy()
 
 plt.figure(figsize=(10, 5))
 for estrategia, grupo in w2.groupby('estrategia'):
-    grupo = grupo.sort_values('operacao')
+    grupo = grupo.sort_values('operacao')#ordena por eperação (bestfit, nextfit etc)
     plt.plot(grupo['operacao'], grupo['frag_externa'] * 100, label=estrategia)
 
 plt.xlabel('Operação')
@@ -111,7 +112,11 @@ salvar('workload2_frag_externa.png')#ao inves de show()
 print('Workload 3 - padrão adversarial')
 w3 = df[df['workload'] == 'workload3'].copy()
 
-print(w3.groupby('estrategia').agg({'falhas': 'sum', 'frag_externa': 'max', 'maior_livre': 'min'}).reset_index())
+print(w3.groupby('estrategia').agg({ #groupby com mean, maximo e minimo
+    'falhas': 'sum', 
+    'frag_externa': 'max', 
+    'maior_livre': 'min'
+}).reset_index())
 
 # ------------------- NUMERO DE ALOCAÇÕES POR OPERAÇÃO---------------------- 
 print('Número de operações por alocação')
@@ -129,7 +134,7 @@ salvar('custo_busca.png')#ao inves de show()
 if 'tempo_alloc_ns' in df.columns:
     print('Tempo de execução (alocação): mediana (p50) e percentil 95 (p95)')
     print(df.groupby('estrategia')['tempo_alloc_ns'].agg(
-        p50=lambda x: np.percentile(x.dropna(), 50),
+        p50=lambda x: np.percentile(x.dropna(), 50), #dropna com lambda é pra tirar os valores com None, ao inves de ficar renomeando
         p95=lambda x: np.percentile(x.dropna(), 95),
     ).reset_index())
 

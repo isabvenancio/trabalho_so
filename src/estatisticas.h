@@ -15,6 +15,3 @@ extern Estatisticas estatisticas; // variável global para armazenar as estatís
 
 #endif // ESTATISTICAS_H
 
-// workload1.c
-// workload2.c ─> comparativo.csv ─> Jupyter Notebook ─> tabelas + gráficos
-// workload3.c
