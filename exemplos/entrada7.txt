@@ -1,0 +1,7 @@
+# Cenario 7 -- coalescencia (bloco 2 se funde com o bloco 1)
+ALLOC 100
+ALLOC 100
+ALLOC 100
+FREE 1
+FREE 2
+DUMP

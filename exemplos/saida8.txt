@@ -1,0 +1,19 @@
+Bloco 1 alocado em endereco 0, tamanho 104
+Bloco 2 alocado em endereco 144, tamanho 104
+Bloco 3 alocado em endereco 288, tamanho 104
+Bloco 1 (tamanho 104, endereco 0) liberado
+Bloco 3 (tamanho 104, endereco 288) liberado
+ERR_OUT_OF_MEMORY: sem bloco contiguo para 150 bytes (livre total: 208, maior livre: 104)
+ERRO: ALLOC 150 falhou
+Endereco   Tamanho  Estado
+0          104      LIVRE
+144        104      OCUPADO
+288        104      LIVRE
+Heap: 432 bytes | cabecalho: 40 bytes
+Blocos: 1 ocupados, 2 livres
+Ocupado: 104 | Livre: 208 | Maior livre: 104
+Fragmentacao interna: 4 bytes (taxa de desperdicio 3.85%)
+Fragmentacao externa: 50.00%
+Overhead de metadados: 120 bytes (27.78% do heap)
+Alocacoes: 4 | falhas: 1 (por fragmentacao: 1) | taxa de falha: 25.00%
+Blocos examinados por alocacao: 2.25

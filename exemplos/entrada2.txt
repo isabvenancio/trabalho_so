@@ -1,0 +1,5 @@
+# Cenario 3 -- alocacoes sequenciais (First-Fit)
+ALLOC 100
+ALLOC 200
+ALLOC 50
+DUMP

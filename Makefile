@@ -11,6 +11,8 @@ OBJS = $(SRCS:%.c=$(BUILD)/%.o)
 
 # programas: cada um tem o seu main
 CSV       ?= resultados/comparativo.csv
+# python com pandas/matplotlib: usa o .venv se existir, senão o python3 do sistema
+PY        ?= $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 EXEC      = alocador
 TESTES    = testes
 DRIVER    = driver
@@ -59,7 +61,7 @@ bench: $(WORKLOADS)
 
 # make analise -> gera tabelas e gráficos a partir do CSV
 analise:
-	python3 src/analise.py $(CSV)
+	$(PY) src/analise.py $(CSV)
 
 # make sanitize -> recompila tudo com AddressSanitizer/UBSan e roda os testes
 sanitize:

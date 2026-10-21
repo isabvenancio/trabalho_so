@@ -3,5 +3,6 @@ build/
 *.d
 alocador
 testes
+driver
 workload[123]
 __pycache__/

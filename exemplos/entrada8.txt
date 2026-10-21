@@ -1,0 +1,11 @@
+# Cenario 8 -- falha por fragmentacao externa
+# heap de 432 = 3 x (40 de cabecalho + 104 de dados)
+HEAP 432
+ALLOC 100
+ALLOC 100
+ALLOC 100
+FREE 1
+FREE 3
+ALLOC 150
+DUMP
+STATS

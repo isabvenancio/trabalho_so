@@ -1,0 +1,11 @@
+# Cenario 5 -- Best-Fit com coalescencia (o livre de 56 se funde com o livre final)
+ESTRATEGIA best
+COALESCENCIA 1
+ALLOC 100
+ALLOC 200
+ALLOC 50
+FREE 1
+FREE 3
+DUMP
+ALLOC 40
+DUMP

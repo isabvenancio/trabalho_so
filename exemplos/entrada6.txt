@@ -1,0 +1,10 @@
+# Cenario 6 -- Worst-Fit sem coalescencia
+ESTRATEGIA worst
+COALESCENCIA 0
+ALLOC 100
+ALLOC 200
+ALLOC 50
+FREE 1
+FREE 3
+ALLOC 40
+DUMP

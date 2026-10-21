@@ -15,13 +15,19 @@ typedef struct bloco {
 } Bloco;
 
 typedef enum status_aloc {
-    ALOC_SUCESSO,
-    ALOC_ERRO_MEMORIA_INSUFICIENTE,
-    ALOC_ERRO_BLOCO_INVALIDO,
-    ALOC_ERRO_FRAGMENTACAO
+    ALOC_OK = 0,
+    ERR_HEAP_NOT_INITIALIZED,
+    ERR_OUT_OF_MEMORY,     /* não há espaço livre suficiente nem somando tudo */
+    ERR_FRAGMENTATION,     /* há espaço livre total, mas nenhum bloco contíguo */
+    ERR_BAD_POINTER,
+    ERR_DOUBLE_FREE
 } AlocStatus;
 
+extern int coalescencia_ativa; /* 1 = funde vizinhos livres no free; 0 = não funde */
+extern char *heap_base;        /* início do heap simulado (NULL antes do mem_init) */
+
 void mem_init(size_t heap_size);
+void mem_destroy(void);
 void* meu_malloc(size_t tamanho);
 void meu_free(void* ptr);
 void mem_stats(void);

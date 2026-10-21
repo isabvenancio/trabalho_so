@@ -1,0 +1,11 @@
+# Cenario 5 -- Best-Fit sem coalescencia
+ESTRATEGIA best
+COALESCENCIA 0
+ALLOC 100
+ALLOC 200
+ALLOC 50
+FREE 1
+FREE 3
+DUMP
+ALLOC 40
+DUMP

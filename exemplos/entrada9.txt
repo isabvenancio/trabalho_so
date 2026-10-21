@@ -1,0 +1,5 @@
+# Cenario 9 -- liberacao invalida e double free
+ALLOC 100
+FREE 99
+FREE 1
+FREE 1

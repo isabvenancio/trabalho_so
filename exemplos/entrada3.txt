@@ -1,0 +1,8 @@
+# Cenario 4 -- liberacao e reuso (First-Fit)
+# a sobra de 24 bytes nao comporta cabecalho + MIN_DADOS, entao o bloco 4 fica com 104
+ALLOC 100
+ALLOC 200
+ALLOC 50
+FREE 1
+ALLOC 80
+DUMP
