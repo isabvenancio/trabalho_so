@@ -1,0 +1,43 @@
+Passo a passo dos testes
+
+0. Começar do zero, apagando os executáveis e objetos antigos:
+
+make clean
+
+1. Compilar. O TSO exige que não apareça nenhum warning.
+
+make all testes driver
+
+2. Testes automáticos. Esperado: 93/93 verificacoes OK.
+
+make test
+
+As mensagens ERR_... que aparecem no meio são normais: são os testes de erro provocando os erros de propósito.
+
+3. Exemplos de entrada e saída. Esperado: 9 ok, 0 falha(s).
+
+make exemplos
+
+4. Valgrind (memória e vazamentos). Esperado: valgrind: nenhum erro de memoria nem vazamento.
+
+make valgrind
+
+Se der erro, a mensagem mostra o comando exato para rodar e ver os detalhes. Por exemplo:
+
+valgrind --leak-check=full ./testes
+
+5. Ver um exemplo na tela, para conferir na mão ou mostrar no relatório:
+
+./driver exemplos/entrada1.txt
+
+6. Programa demo (o main.c):
+
+./alocador
+Ainda não funcionam
+make bench: os workloads ainda não têm main.
+make analise: precisa do comparativo.csv gerado pelos workloads e de pandas/matplotlib instalados.
+
+Outros testes:
+gcc -Wall -Wextra -Wpedantic -Wshadow -std=c11 -Isrc -fsyntax-only src/*.c
+for f in src/alocador.c src/estrategias.c src/driver.c src/testes.c; do gcc -std=c11 -Isrc -fanalyzer -c $f -o /dev/null; done
+./driver /tmp/aleatorio_best.txt 2>&1 | tail -8

@@ -65,11 +65,12 @@ analise:
 	python3 src/analise.py $(CSV)
 
 # make valgrind -> roda os testes e todos os exemplos dentro do valgrind
-# (-q: só mostra algo se achar erro; --error-exitcode=1: o make para se achar erro)
+# (--error-exitcode=1: o programa "falha" se o valgrind achar erro; a saída é escondida,
+#  então, se der erro, rode o comando mostrado na mensagem para ver os detalhes)
 VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
 valgrind: $(TESTES) $(DRIVER)
-	$(VALGRIND) ./$(TESTES) > /dev/null
-	@for e in exemplos/entrada*.txt; do $(VALGRIND) ./$(DRIVER) $$e > /dev/null 2>&1 || { echo "valgrind achou erro em $$e"; exit 1; }; done
+	@$(VALGRIND) ./$(TESTES) > /dev/null 2>&1 || { echo "valgrind achou erro nos testes: rode $(VALGRIND) ./$(TESTES)"; exit 1; }
+	@for e in exemplos/entrada*.txt; do $(VALGRIND) ./$(DRIVER) $$e > /dev/null 2>&1 || { echo "valgrind achou erro em $$e: rode $(VALGRIND) ./$(DRIVER) $$e"; exit 1; }; done
 	@echo "valgrind: nenhum erro de memoria nem vazamento"
 
 clean:
