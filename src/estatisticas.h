@@ -1,8 +1,10 @@
-#include <stdio.h>
-#include "alocador.h"
 #ifndef ESTATISTICAS_H
 #define ESTATISTICAS_H
 
+#include <stddef.h> /* size_t */
+
+// Acumulados ao longo da execução: n_malloc, n_falhas, n_falhas_frag, blocos_examinados e frag_interna.
+// Situação atual, recalculada por contar_blocos(): total_livre, total_ocupado, maior_livre, n_livres e n_ocupados.
 typedef struct {
     size_t total_livre, total_ocupado, maior_livre;
     size_t n_livres, n_ocupados;

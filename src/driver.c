@@ -3,7 +3,7 @@
 #include "alocador.h"
 #include "estrategias.h"
 
-/* Driver de testes (roteiro 4.6): le comandos de um arquivo, um por linha.
+/* Driver de testes: le comandos de um arquivo, um por linha.
  *   ALLOC <tamanho>   FREE <id>   DUMP   STATS
  *   HEAP <tamanho>    ESTRATEGIA first|best|worst|next   COALESCENCIA 0|1
  * Linhas vazias ou comecando com # sao ignoradas.
@@ -60,13 +60,9 @@ int main(int argc, char *argv[]) {
             } else {
                 /* o ponteiro nao e apagado depois do free: assim um FREE repetido
                    chega no meu_free e o alocador detecta o double free */
-                Bloco *b = (Bloco *)((char *)ponteiros[valor] - TAM_CAB);
-                size_t tamanho = b->tamanho;
-                size_t endereco = (size_t)((char *)b - heap_base);
-                int estava_livre = b->livre;
                 meu_free(ponteiros[valor]);
-                if (!estava_livre)
-                    printf("Bloco %ld (tamanho %zu, endereco %zu) liberado\n", valor, tamanho, endereco);
+                if (ultimo_status == ALOC_OK)
+                    printf("Bloco %ld liberado\n", valor);
             }
         } else if (strcmp(comando, "DUMP") == 0) {
             mem_dump();

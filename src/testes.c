@@ -5,10 +5,11 @@
 
 /*make testes && valgrind --leak-check=full ./testes*/
 
-/* Testes básicos obrigatórios, seguindo os "Verifique antes de seguir" do roteiro.
- * Valores esperados calculados com TAM_CAB = 40 bytes (sizeof(Bloco) com o campo pedido). */
+/* Testes básicos obrigatórios, seguindo os "Verifique antes de seguir"*/
+/* Valores esperados calculados com TAM_CAB = 40 bytes (sizeof(Bloco) com o campo pedido). */
 
 #define CAB(p) ((Bloco *)((char *)(p) - TAM_CAB)) /* cabeçalho a partir do dado */
+//CAB(p) = macro que volta do ponteiro de dados para o cabeçalho, para os testes conferirem os campos.
 
 int total = 0;  /* quantas verificacoes foram feitas */
 int falhas = 0; /* quantas deram errado */
@@ -28,7 +29,7 @@ void teste_double_free(void);
 void teste_estrategias(void);
 void executar_testes(void);
 
-void checar(int ok, char *teste) {
+void checar(int ok, char *teste) { //conta uma verificação e imprime se falhar.
     total++;
     if (!ok) {
         falhas++;
@@ -187,8 +188,10 @@ void teste_heap_nao_inicializado(void) {
     size_t antes = estatisticas.n_malloc;
     int local;
     checar(meu_malloc(10) == NULL, "teste_heap_nao_inicializado");
+    checar(ultimo_status == ERR_HEAP_NOT_INITIALIZED, "teste_heap_nao_inicializado");
     checar(estatisticas.n_malloc == antes, "teste_heap_nao_inicializado");
     meu_free(&local); /* não pode dar segfault */
+    checar(ultimo_status == ERR_HEAP_NOT_INITIALIZED, "teste_heap_nao_inicializado");
     mem_stats();
     mem_dump();
 }
@@ -199,6 +202,7 @@ void teste_sem_memoria(void) {
     checar(meu_malloc(0) == NULL, "teste_sem_memoria");
     checar(estatisticas.n_malloc == 0, "teste_sem_memoria"); /* malloc(0) não conta como pedido */
     checar(meu_malloc(5000) == NULL, "teste_sem_memoria");   /* maior que o heap inteiro */
+    checar(ultimo_status == ERR_OUT_OF_MEMORY, "teste_sem_memoria");
     checar(estatisticas.n_falhas == 1, "teste_sem_memoria");
 
     /* falha por fragmentação externa: 280 e 320 livres, separados por B ocupado */
@@ -212,6 +216,7 @@ void teste_sem_memoria(void) {
     meu_free(a);
     meu_free(c);
     checar(meu_malloc(500) == NULL, "teste_sem_memoria"); /* 600 livres no total, maior bloco 320 */
+    checar(ultimo_status == ERR_FRAGMENTATION, "teste_sem_memoria");
     checar(estatisticas.n_falhas == 1, "teste_sem_memoria");
     checar(estatisticas.n_falhas_frag == 1, "teste_sem_memoria");
 }
@@ -227,7 +232,9 @@ void teste_ponteiro_invalido(void) {
     int local;
 
     meu_free(a + 8);  /* endereço no meio de A */
+    checar(ultimo_status == ERR_BAD_POINTER, "teste_ponteiro_invalido");
     meu_free(&local); /* endereço fora do heap */
+    checar(ultimo_status == ERR_BAD_POINTER, "teste_ponteiro_invalido");
     checar(CAB(a)->livre == 0, "teste_ponteiro_invalido");
     checar(CAB(b)->livre == 0, "teste_ponteiro_invalido");
     checar(estatisticas.frag_interna == frag_antes, "teste_ponteiro_invalido");
@@ -243,8 +250,10 @@ void teste_double_free(void) {
     if (a == NULL || b == NULL || c == NULL) return;
 
     meu_free(b);
+    checar(ultimo_status == ALOC_OK, "teste_double_free");
     size_t frag_antes = estatisticas.frag_interna;
     meu_free(b); /* deve ser detectado e ignorado */
+    checar(ultimo_status == ERR_DOUBLE_FREE, "teste_double_free");
     checar(CAB(b)->livre == 1, "teste_double_free");
     checar(estatisticas.frag_interna == frag_antes, "teste_double_free");
     checar(estatisticas.frag_interna == 4 + 4, "teste_double_free"); /* só A e C continuam ocupados */

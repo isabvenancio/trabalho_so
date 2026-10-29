@@ -1,8 +1,8 @@
 Bloco 1 alocado em endereco 0, tamanho 104
 Bloco 2 alocado em endereco 144, tamanho 200
 Bloco 3 alocado em endereco 384, tamanho 56
-Bloco 1 (tamanho 104, endereco 0) liberado
-Bloco 3 (tamanho 56, endereco 384) liberado
+Bloco 1 liberado
+Bloco 3 liberado
 Endereco   Tamanho  Estado
 0          104      LIVRE
 144        200      OCUPADO

@@ -1,6 +1,7 @@
+#make gera o alocador (a partir do main.c).
 #compilador e flags
 CC      = gcc
-CFLAGS  = -Wall -Wextra -g -std=c11 -MMD -MP -Isrc
+CFLAGS  = -Wall -Wextra -g -std=c11 -Isrc
 #objetovs vao para build/src e build/benchmarks
 BUILD   = build
 
@@ -8,11 +9,10 @@ BUILD   = build
 # arquivos fontes e objetos
 SRCS = src/alocador.c src/estrategias.c src/estatisticas.c
 OBJS = $(SRCS:%.c=$(BUILD)/%.o)
+HEADERS = src/alocador.h src/estrategias.h src/estatisticas.h
 
 # programas: cada um tem o seu main
 CSV       ?= resultados/comparativo.csv
-# python com pandas/matplotlib: usa o .venv se existir, senão o python3 do sistema
-PY        ?= $(shell [ -x .venv/bin/python ] && echo .venv/bin/python || echo python3)
 EXEC      = alocador
 TESTES    = testes
 DRIVER    = driver
@@ -21,7 +21,7 @@ WORKLOADS = workload1 workload2 workload3
 # arquivos executáveis "target" que serão gerados
 BINS      = $(EXEC) $(TESTES) $(DRIVER) $(WORKLOADS)
 
-.PHONY: all test exemplos bench analise sanitize clean
+.PHONY: all test exemplos bench analise valgrind clean
 all: $(EXEC)
 
 $(EXEC): $(BUILD)/src/main.o $(OBJS)
@@ -37,7 +37,8 @@ $(DRIVER): $(BUILD)/src/driver.o $(OBJS)
 $(WORKLOADS): %: $(BUILD)/benchmarks/%.o $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BUILD)/%.o: %.c
+# compila cada .c em build/...; se qualquer header mudar, recompila
+$(BUILD)/%.o: %.c $(HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -61,14 +62,15 @@ bench: $(WORKLOADS)
 
 # make analise -> gera tabelas e gráficos a partir do CSV
 analise:
-	$(PY) src/analise.py $(CSV)
+	python3 src/analise.py $(CSV)
 
-# make sanitize -> recompila tudo com AddressSanitizer/UBSan e roda os testes
-sanitize:
-	$(MAKE) clean
-	$(MAKE) CFLAGS="$(CFLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer" test
+# make valgrind -> roda os testes e todos os exemplos dentro do valgrind
+# (-q: só mostra algo se achar erro; --error-exitcode=1: o make para se achar erro)
+VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
+valgrind: $(TESTES) $(DRIVER)
+	$(VALGRIND) ./$(TESTES) > /dev/null
+	@for e in exemplos/entrada*.txt; do $(VALGRIND) ./$(DRIVER) $$e > /dev/null 2>&1 || { echo "valgrind achou erro em $$e"; exit 1; }; done
+	@echo "valgrind: nenhum erro de memoria nem vazamento"
 
 clean:
 	rm -rf $(BUILD) $(BINS)
-
--include $(OBJS:.o=.d) $(BUILD)/src/main.d $(BUILD)/src/testes.d $(BUILD)/src/driver.d $(WORKLOADS:%=$(BUILD)/benchmarks/%.d)

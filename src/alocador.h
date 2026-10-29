@@ -1,8 +1,10 @@
-#include <stdio.h>
 #ifndef ALOCADOR_H
 #define ALOCADOR_H
+
+#include <stddef.h> /* size_t */
+
 #define ALINHAMENTO 8
-#define ALINHAR(n) (((n) + (ALINHAMENTO - 1)) & ~(size_t)(ALINHAMENTO - 1))
+#define ALINHAR(n) ((((n) + ALINHAMENTO - 1) / ALINHAMENTO) * ALINHAMENTO) /* arredonda para o próximo múltiplo de 8 */
 #define TAM_CAB ALINHAR(sizeof(Bloco))
 #define MIN_DADOS 8 /* menor área de dados que vale a pena criar */
 
@@ -25,6 +27,7 @@ typedef enum status_aloc {
 
 extern int coalescencia_ativa; /* 1 = funde vizinhos livres no free; 0 = não funde */
 extern char *heap_base;        /* início do heap simulado (NULL antes do mem_init) */
+extern AlocStatus ultimo_status; /* resultado da última chamada de meu_malloc ou meu_free */
 
 void mem_init(size_t heap_size);
 void mem_destroy(void);

@@ -1,24 +1,20 @@
 #include "estrategias.h"
 
-static FuncaoBusca funcao_busca = buscar_first_fit;
+Estrategia estrategia_atual = FIRST_FIT;
 
 void definir_estrategia(Estrategia estrategia){
-    if (estrategia == FIRST_FIT){
-        funcao_busca = buscar_first_fit;
-    }
-    else if (estrategia == NEXT_FIT){
-        funcao_busca = buscar_next_fit;
-    }
-    else if (estrategia == BEST_FIT){
-        funcao_busca = buscar_best_fit;
-    }
-    else if (estrategia == WORST_FIT){
-        funcao_busca = buscar_worst_fit;
-    }
+    estrategia_atual = estrategia;
 }
 
+/* chama a busca da estratégia escolhida */
 Bloco *buscar(Bloco *inicio, size_t tamanho, size_t *examinados){
-    return funcao_busca(inicio, tamanho, examinados);
+    switch (estrategia_atual) {
+        case NEXT_FIT:  return buscar_next_fit(inicio, tamanho, examinados);
+        case BEST_FIT:  return buscar_best_fit(inicio, tamanho, examinados);
+        case WORST_FIT: return buscar_worst_fit(inicio, tamanho, examinados);
+        case FIRST_FIT:
+        default:        return buscar_first_fit(inicio, tamanho, examinados);
+    }
 }
 
 
