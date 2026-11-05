@@ -5,7 +5,7 @@
 
 /* Driver de testes: le comandos de um arquivo, um por linha.
  *   ALLOC <tamanho>   FREE <id>   DUMP   STATS
- *   HEAP <tamanho>    ESTRATEGIA first|best|worst|next   COALESCENCIA 0|1
+ *   HEAP <tamanho>    ESTRATEGIA first|next|best|worst   COALESCENCIA 0|1
  * Linhas vazias ou comecando com # sao ignoradas.
  * O id de cada bloco segue a ordem das alocacoes que deram certo (1, 2, 3, ...).
  * Se o arquivo nao tiver HEAP, o heap tem HEAP_PADRAO bytes. */
@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
                 n_blocos = 0; /* os blocos do heap antigo deixaram de existir */
             }
         } else if (strcmp(comando, "ESTRATEGIA") == 0 && sscanf(linha, "%*s %31s", texto) == 1) {
-            if (strcmp(texto, "first") == 0)      definir_estrategia(FIRST_FIT);
-            else if (strcmp(texto, "best") == 0)  definir_estrategia(BEST_FIT);
-            else if (strcmp(texto, "worst") == 0) definir_estrategia(WORST_FIT);
-            else if (strcmp(texto, "next") == 0)  definir_estrategia(NEXT_FIT);
+            if (strcmp(texto, "first") == 0)      estrategia_atual = FIRST_FIT;
+            else if (strcmp(texto, "next") == 0)  estrategia_atual = NEXT_FIT;
+            else if (strcmp(texto, "best") == 0)  estrategia_atual = BEST_FIT;
+            else if (strcmp(texto, "worst") == 0) estrategia_atual = WORST_FIT;
             else printf("ERRO: estrategia desconhecida (%s)\n", texto);
         } else if (strcmp(comando, "COALESCENCIA") == 0 && sscanf(linha, "%*s %ld", &valor) == 1) {
             coalescencia_ativa = (valor != 0);

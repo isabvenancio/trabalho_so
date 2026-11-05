@@ -14,13 +14,14 @@ workload2.c ├─> alocador (meu_malloc / meu_free) ─> resultados/comparativo
 workload3.c ┘
 """
 
-# python3 src/analise.py resultados/teste/comparativo.csv
+# python3 src/analise.py   (ou: make analise)
 
 import sys
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')  # sem janela: os gráficos são salvos em resultados/
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 
@@ -105,7 +106,8 @@ print('Workload 1 - alocações sequenciais')
 w1 = finais_coal[finais_coal['workload'] == 'workload1'].copy()
 print(w1.groupby('estrategia').agg({ #groupby com funcao sum e maximo
     'alocacoes_ok': 'sum',
-    'frag_interna': 'max'
+    'frag_interna': 'max',
+    'overhead': 'max' #bytes gastos com cabeçalhos
 }).reset_index())
 
 plt.figure(figsize=(8, 5))
@@ -134,13 +136,11 @@ salvar('workload2_frag_externa.png')#ao inves de show()
 
 # --------------------- WORKLOAD 3- PADRÃO ADVERSARIAL---------------------- 
 print('Workload 3 - padrão adversarial')
-w3 = finais_coal[finais_coal['workload'] == 'workload3'].copy()
+w3 = com_coal[com_coal['workload'] == 'workload3'].copy()
 
-print(w3.groupby('estrategia').agg({ #groupby com mean, maximo e minimo
-    'falhas': 'sum',
-    'frag_externa': 'max',
-    'maior_livre': 'min'
-}).reset_index())
+# situação do heap na primeira falha: o pedido grande que cabe na soma dos buracos, mas em nenhum deles
+primeira_falha = w3[w3['falhas'] == 1].groupby('estrategia').head(1)
+print(primeira_falha[['estrategia', 'operacao', 'falhas_frag', 'frag_externa', 'maior_livre', 'total_livre']])
 
 # ------------------- COALESCÊNCIA LIGADA X DESLIGADA ----------------------
 print('Coalescência ligada x desligada')
@@ -172,19 +172,20 @@ else:
 
 # --------------------- ESCALA ------------------------
 # execuções do workload 2 com heaps e números de operações diferentes, gravadas com workload = 'escala'
+# aqui só interessa a última linha de cada execução: nela, operacao = total de operações
 print('Escala - blocos examinados por alocação x tamanho do heap e número de operações')
 esc = finais_coal[finais_coal['workload'] == 'escala']
 if len(esc) > 0:
-    print(esc.pivot_table(index=['heap_size', 'operacoes'], columns='estrategia', values='examinados_por_alocacao'))
+    print(esc.pivot_table(index=['heap_size', 'operacao'], columns='estrategia', values='examinados_por_alocacao'))
 
     heaps = sorted(esc['heap_size'].unique())
     fig, eixos = plt.subplots(1, len(heaps), figsize=(5 * len(heaps), 4), sharey=True, squeeze=False)
     for eixo, heap in zip(eixos[0], heaps): #um gráfico para cada tamanho de heap
         for estrategia, grupo in esc[esc['heap_size'] == heap].groupby('estrategia'):
-            grupo = grupo.sort_values('operacoes')
-            eixo.plot(grupo['operacoes'], grupo['examinados_por_alocacao'], marker='o', label=estrategia)
+            grupo = grupo.sort_values('operacao')
+            eixo.plot(grupo['operacao'], grupo['examinados_por_alocacao'], marker='o', label=estrategia)
         eixo.set_xscale('log') #100, 1000, 10000 operações
-        valores = sorted(esc['operacoes'].unique())
+        valores = sorted(esc['operacao'].unique())
         eixo.set_xticks(valores) #mostra os números de operações em vez de 10^2, 10^3...
         eixo.set_xticklabels([str(int(v)) for v in valores])
         eixo.minorticks_off()
@@ -211,10 +212,20 @@ plt.title('Custo médio da busca')
 salvar('custo_busca.png')#ao inves de show()
 
 # --------------------- TEMPO DE EXECUÇÃO------------------------ 
+# usa as execuções normais: a escala só grava a primeira e a última operação de cada execução
+sem_escala_linhas = com_coal[com_coal['workload'] != 'escala']
+
 if 'tempo_alloc_ns' in df.columns:
     print('Tempo de execução (alocação): mediana (p50) e percentil 95 (p95)')
-    print(df.groupby('estrategia')['tempo_alloc_ns'].agg(
+    print(sem_escala_linhas.groupby('estrategia')['tempo_alloc_ns'].agg(
         p50=lambda x: np.percentile(x.dropna(), 50), #dropna com lambda é pra tirar os valores com None, ao inves de ficar renomeando
+        p95=lambda x: np.percentile(x.dropna(), 95),
+    ).reset_index())
+
+if 'tempo_free_ns' in df.columns:
+    print('Tempo de execução (liberação): mediana (p50) e percentil 95 (p95)')
+    print(sem_escala_linhas.groupby('estrategia')['tempo_free_ns'].agg(
+        p50=lambda x: np.percentile(x.dropna(), 50),
         p95=lambda x: np.percentile(x.dropna(), 95),
     ).reset_index())
 
@@ -229,3 +240,70 @@ resumo = (sem_escala.groupby('estrategia').agg({
 print(resumo)
 
 resumo.to_csv(saida / 'resumo.csv', index=False) # manda essa tabelona para um arquivo de planilha
+
+# -------------------------- BARRA DO HEAP (opcional do TSO) -----------------------
+# cada barra é o heap inteiro no fim da execução, com um retângulo para cada bloco
+print('Barra do heap')
+blocos = pd.read_csv(saida / 'blocos.csv').drop_duplicates() #rodar um workload de novo acrescenta linhas iguais
+
+ordem = ['first_fit', 'next_fit', 'best_fit', 'worst_fit']
+paineis = [ #(nome no csv, coalescência, título)
+    ('workload1', 1, 'Workload 1: fim da execução'),
+    ('workload2', 1, 'Workload 2: fim, coalescência ligada'),
+    ('workload2', 0, 'Workload 2: fim, coalescência desligada'),
+    ('workload3_falha', 1, 'Workload 3: no pedido grande que falha'),
+    ('workload3', 1, 'Workload 3: fim, coalescência ligada'),
+    ('workload3', 0, 'Workload 3: fim, coalescência desligada'),
+]
+VERDE = '#006300' #livre, como o TSO sugere (verde escuro: separa melhor do laranja no daltonismo)
+LARANJA = '#eb6834' #ocupado
+
+fig, eixos = plt.subplots(3, 2, figsize=(13, 8))
+for eixo, (nome, coalescencia, titulo) in zip(eixos.flat, paineis):
+    painel = blocos[(blocos['workload'] == nome) & (blocos['coalescencia'] == coalescencia)]
+    for y, estrategia in enumerate(ordem):
+        for _, bloco in painel[painel['estrategia'] == estrategia].iterrows():
+            eixo.barh(y, bloco['bytes'], left=bloco['endereco'], height=0.7,
+                      color=VERDE if bloco['livre'] else LARANJA,
+                      hatch='///' if bloco['livre'] else None, #as listras ajudam em impressão preto e branco e no daltonismo
+                      edgecolor='white', linewidth=0.8)
+    eixo.set_yticks(range(len(ordem)))
+    eixo.set_yticklabels(ordem)
+    eixo.invert_yaxis() #first_fit em cima
+    eixo.set_xlim(0, painel['endereco'].add(painel['bytes']).max())
+    eixo.set_xlabel('Endereço no heap (bytes)')
+    eixo.set_title(titulo, loc='left', fontsize=11)
+    eixo.spines[['top', 'right', 'left']].set_visible(False)
+    eixo.tick_params(axis='y', length=0)
+legenda = [Patch(facecolor=VERDE, edgecolor='white', hatch='///', label='Livre'), Patch(facecolor=LARANJA, label='Ocupado')]
+plt.tight_layout(rect=(0, 0.05, 1, 1)) #deixa espaço embaixo para a legenda
+fig.legend(handles=legenda, loc='lower center', ncol=2, frameon=False)
+plt.savefig(saida / 'barra_heap.png', dpi=150)
+plt.close()
+
+# -------------------------- COMPARAÇÃO COM O MALLOC REAL (opcional do TSO) -----------------------
+print('Tempo: nosso alocador x malloc real, mediana (p50) e percentil 95 (p95), em ns')
+tempos = pd.read_csv(saida / 'tempo_malloc.csv')
+tabela_tempos = tempos.groupby(['operacao', 'quem'])['tempo_ns'].agg(
+    p50=lambda x: np.percentile(x, 50),
+    p95=lambda x: np.percentile(x, 95),
+).reset_index()
+print(tabela_tempos)
+tabela_tempos.to_csv(saida / 'resumo_tempo_malloc.csv', index=False)
+
+ordem_tempo = ['malloc_real'] + ordem
+fig, eixos = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
+for eixo, operacao in zip(eixos, ['malloc', 'free']):
+    linhas = tabela_tempos[tabela_tempos['operacao'] == operacao].set_index('quem').loc[ordem_tempo]
+    for deslocamento, coluna, cor in [(-0.2, 'p50', '#2a78d6'), (0.2, 'p95', '#eb6834')]:
+        barras = eixo.barh(np.arange(len(ordem_tempo)) + deslocamento, linhas[coluna], height=0.36, color=cor, label=coluna)
+        eixo.bar_label(barras, fmt='%.0f', padding=3, fontsize=9)
+    eixo.set_yticks(range(len(ordem_tempo)))
+    eixo.set_yticklabels(ordem_tempo)
+    eixo.set_xlabel('Tempo por operação (ns)')
+    eixo.set_title(operacao, loc='left')
+    eixo.spines[['top', 'right']].set_visible(False)
+    eixo.margins(x=0.12) #espaço para os números na ponta das barras
+eixos[0].invert_yaxis() #malloc_real em cima (os dois gráficos dividem o mesmo eixo y, então inverte uma vez só)
+eixos[0].legend(frameon=False, loc='upper right')
+salvar('tempo_malloc.png')

@@ -1,8 +1,7 @@
-build/
 *.o
-*.d
 alocador
 testes
 driver
 workload[123]
+referencia_malloc
 __pycache__/

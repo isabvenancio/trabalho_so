@@ -14,21 +14,6 @@
 int total = 0;  /* quantas verificacoes foram feitas */
 int falhas = 0; /* quantas deram errado */
 
-void checar(int ok, char *teste);
-void teste_inicializacao(void);
-void teste_alocacao_simples(void);
-void teste_multiplas_alocacoes(void);
-void teste_liberacao(void);
-void teste_splitting(void);
-void teste_coalescencia(void);
-void teste_alinhamento(void);
-void teste_heap_nao_inicializado(void);
-void teste_sem_memoria(void);
-void teste_ponteiro_invalido(void);
-void teste_double_free(void);
-void teste_estrategias(void);
-void executar_testes(void);
-
 void checar(int ok, char *teste) { //conta uma verificação e imprime se falhar.
     total++;
     if (!ok) {
@@ -267,7 +252,7 @@ void teste_estrategias(void) {
     Estrategia estrategias[] = { FIRST_FIT, BEST_FIT, WORST_FIT };
     for (int i = 0; i < 3; i++) {
         mem_init(1000);
-        definir_estrategia(estrategias[i]);
+        estrategia_atual = estrategias[i];
         char *livre1 = meu_malloc(104);
         void *sep1   = meu_malloc(8);   /* separadores ocupados: impedem a fusão */
         char *livre2 = meu_malloc(56);
@@ -283,7 +268,43 @@ void teste_estrategias(void) {
         if (estrategias[i] == BEST_FIT)  checar(p == livre2, "teste_estrategias"); /* menor que serve */
         if (estrategias[i] == WORST_FIT) checar(p == livre3, "teste_estrategias"); /* maior livre */
     }
-    definir_estrategia(FIRST_FIT);
+    estrategia_atual = FIRST_FIT;
+}
+
+void teste_next_fit(void) {
+    printf("== teste_next_fit ==\n");
+    estrategia_atual = NEXT_FIT;
+
+    /* continua de onde parou: ignora o buraco do início e usa o bloco livre do fim */
+    mem_init(1000);
+    char *a = meu_malloc(104);
+    void *sep = meu_malloc(8); /* separador ocupado: impede a fusão */
+    char *fim = (char *)sep + 8 + TAM_CAB; /* dados do bloco livre do fim (760 bytes) */
+    checar(a != NULL && sep != NULL, "teste_next_fit");
+    if (a == NULL || sep == NULL) return;
+    meu_free(a);
+    char *p = meu_malloc(40);
+    checar(p == fim, "teste_next_fit");
+
+    /* dá a volta: o fim do heap fica cheio e o próximo pedido usa o buraco do início */
+    void *resto = meu_malloc(CAB(p)->proximo->tamanho);
+    checar(resto != NULL, "teste_next_fit");
+    checar(meu_malloc(40) == a, "teste_next_fit");
+
+    /* nenhum bloco serve: precisa terminar a volta e devolver NULL, sem laço infinito */
+    checar(meu_malloc(900) == NULL, "teste_next_fit");
+
+    /* o bloco guardado é fundido: a busca continua do bloco que o absorveu */
+    mem_init(1000);
+    void *x = meu_malloc(100);
+    void *y = meu_malloc(100); /* o next-fit guarda y */
+    checar(x != NULL && y != NULL, "teste_next_fit");
+    if (x == NULL || y == NULL) return;
+    meu_free(x);
+    meu_free(y); /* y é fundido em x */
+    checar(meu_malloc(8) == x, "teste_next_fit");
+
+    estrategia_atual = FIRST_FIT;
 }
 
 void executar_testes(void) {
@@ -299,6 +320,7 @@ void executar_testes(void) {
     teste_ponteiro_invalido();
     teste_double_free();
     teste_estrategias();
+    teste_next_fit();
 }
 
 int main(void) {

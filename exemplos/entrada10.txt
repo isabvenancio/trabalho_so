@@ -1,0 +1,9 @@
+# Next-Fit: continua de onde parou, sem voltar ao buraco do inicio
+ESTRATEGIA next
+COALESCENCIA 1
+ALLOC 100
+ALLOC 100
+ALLOC 100
+FREE 1
+ALLOC 50
+DUMP

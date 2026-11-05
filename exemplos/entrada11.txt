@@ -1,0 +1,8 @@
+# Cenario 7 sem coalescencia -- os blocos 1 e 2 ficam livres, mas separados
+COALESCENCIA 0
+ALLOC 100
+ALLOC 100
+ALLOC 100
+FREE 1
+FREE 2
+DUMP

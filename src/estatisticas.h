@@ -15,5 +15,13 @@ typedef struct {
 
 extern Estatisticas estatisticas; // variável global para armazenar as estatísticas da memória
 
+long agora_ns(void); /* relógio: para medir, guarda o valor antes da operação e subtrai depois */
+
+extern int gravar_csv; /* 1 = cada operação grava uma linha no CSV; 0 = não grava */
+
+/* fazem a operação, medem o tempo dela e imprimem uma linha do CSV */
+void *alocar_e_registrar(const char *workload, int operacao, size_t heap_size, size_t tamanho);
+void liberar_e_registrar(const char *workload, int operacao, size_t heap_size, void *ptr);
+
 #endif // ESTATISTICAS_H
 

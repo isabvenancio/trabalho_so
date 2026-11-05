@@ -13,7 +13,6 @@ AlocStatus ultimo_status = ALOC_OK; /* deu certo ou qual erro aconteceu na últi
 
 static void splitting(Bloco* bloco, size_t tamanho);
 static void coalescencia(Bloco *a, Bloco *b);
-static void contar_blocos(void);
 
 // heap: [cab|dados....][cab|dados..][cab|dados...........]
 //        ^ primeiro      ^ proximo    ^ proximo -> NULL
@@ -32,23 +31,20 @@ void mem_init(size_t heap_size) { //prepara o heap
     heap_base = malloc(heap_size); /* ÚNICO uso do malloc real */
 
     if (heap_base == NULL) {
-        /* TODO: reportar erro */
         fprintf(stderr, "ERRO: nao foi possivel alocar o heap\n");//erro padrão
-        heap_total = 0;
-        primeiro = NULL;
         return;
     }
     heap_total = heap_size;
     primeiro = (Bloco *) heap_base;
 
-    /* TODO: preencher tamanho, livre, proximo e anterior */ //primeiro é o primeiro bloco da lista
+    //primeiro é o primeiro bloco da lista
     primeiro->tamanho = heap_size - TAM_CAB; //Escreve um cabeçalho no início: um único bloco livre de heap_size - 40 bytes.
     primeiro->pedido = 0;
     primeiro->livre = 1;
     primeiro->proximo = NULL;
     primeiro->anterior = NULL;
 
-    memset(&estatisticas, 0, sizeof(estatisticas)); /* cada heap novo começa com estatísticas zeradas  e o nextift tbm zera*/
+    memset(&estatisticas, 0, sizeof(estatisticas)); /* cada heap novo começa com estatísticas zeradas */
     reiniciar_next_fit();
 }
 
@@ -85,10 +81,8 @@ void* meu_malloc(size_t tamanho){//aloca
     size_t exam = 0;
     Bloco *bloco = buscar(primeiro, tamanho_alinhado, &exam);
 
-    /* TODO: registrar ’exam’ nas estatísticas */
     estatisticas.blocos_examinados += exam;
 
-    /* TODO: se b == NULL, contabilizar falha e devolver NULL */
     if (bloco == NULL) { //Se não achou: chama contar_blocos(), registra a falha e decide se foi por fragmentação (havia espaço livre somado suficiente, mas nenhum bloco inteiro grande o bastante).
         /* relatório 3.8: na falha, soma dos livres e maior bloco livre */
         contar_blocos();
@@ -108,7 +102,6 @@ void* meu_malloc(size_t tamanho){//aloca
     //Se achou: chama splitting para cortar a sobra, marca como ocupado, guarda o pedido e soma a fragmentação interna (tamanho do bloco - pedido).
     splitting(bloco, tamanho_alinhado);
 
-    /* TODO: marcar ocupado, guardar ’tamanho’ em b->pedido */
     bloco->livre = 0;
     bloco->pedido = tamanho;
 
@@ -139,7 +132,6 @@ void meu_free(void* ptr){//libera
     }
     Bloco *bloco = (Bloco *)(p - TAM_CAB); //Volta 40 bytes para achar o cabeçalho: ptr - TAM_CAB.
 
-    /* TODO: confirmar que b é realmente um bloco da lista */
     Bloco *atual = primeiro; 
     while (atual != NULL && atual != bloco) { //Percorre a lista para confirmar que aquilo é mesmo um cabeçalho. Um ponteiro no meio de um bloco não passa nesse teste.
         atual = atual->proximo;
@@ -150,7 +142,6 @@ void meu_free(void* ptr){//libera
         return;
     }
 
-    /* TODO: se b->livre, reportar double free e retornar */
     if (bloco->livre) { //Se o bloco já estava livre, é DOUBLE_FREE.
         fprintf(stderr, "ERR_DOUBLE_FREE: bloco ja estava livre\n");//erro padrão
         ultimo_status = ERR_DOUBLE_FREE;
@@ -160,7 +151,6 @@ void meu_free(void* ptr){//libera
     /* relatório 3.8: ao liberar, a fragmentação interna do bloco sai do total */
     estatisticas.frag_interna -= bloco->tamanho - bloco->pedido; 
     //Tira do total a fragmentação interna desse bloco e marca como livre.
-    /* TODO: marcar como livre */
     bloco->livre = 1;
     bloco->pedido = 0;
     ultimo_status = ALOC_OK;
@@ -168,13 +158,9 @@ void meu_free(void* ptr){//libera
     /* em meu_free, depois de marcar livre: */
     //Se coalescencia_ativa: funde com o próximo, se estiver livre, e depois com o anterior, se estiver livre.
     if (coalescencia_ativa) {
-        /* TODO: caso seguinte livre -> fundir(b, b->proximo) */
-        /* TODO: caso seguinte livre -> coalescencia(b, b->proximo) */
         if (bloco->proximo != NULL && bloco->proximo->livre) {
             coalescencia(bloco, bloco->proximo);
         }
-        /* TODO: caso anterior livre -> fundir(b->anterior, b) */
-        /* TODO: caso anterior livre -> coalescencia(b->anterior, b) */
         if (bloco->anterior != NULL && bloco->anterior->livre) {
             coalescencia(bloco->anterior, bloco);
         }
@@ -227,7 +213,6 @@ void mem_dump(void){
     for (Bloco *bloco = primeiro; bloco != NULL; bloco = bloco->proximo) {
         size_t off = (size_t)((char *)bloco - heap_base);
 
-        /* TODO: imprimir off, b->tamanho e LIVRE/OCUPADO */
         printf("%-10zu %-8zu %s\n", off, bloco->tamanho, bloco->livre ? "LIVRE" : "OCUPADO");
         // -10zu exibe o deslocamento do bloco em relação ao início do heap, -8zu exibe o tamanho do bloco, e %s exibe se o bloco está livre ou ocupado
         //imprime uma linha por bloco (offset, tamanho, LIVRE/OCUPADO).
@@ -244,9 +229,24 @@ void mem_dump(void){
 }
 
 
+/* igual ao mem_dump, mas grava os blocos em CSV para o gráfico de barra do heap.
+ * 'bytes' é quanto o bloco ocupa no heap: cabeçalho + dados */
+void mem_dump_csv(const char *nome){
+    FILE *arquivo = fopen("resultados/blocos.csv", "a");
+    if (arquivo == NULL) {
+        fprintf(stderr, "ERRO: nao foi possivel abrir resultados/blocos.csv\n");
+        return;
+    }
+    for (Bloco *bloco = primeiro; bloco != NULL; bloco = bloco->proximo) {
+        fprintf(arquivo, "%s,%s,%d,%zu,%zu,%d\n", nome, nomes_estrategias[estrategia_atual], coalescencia_ativa,
+                (size_t)((char *)bloco - heap_base), TAM_CAB + bloco->tamanho, bloco->livre);
+    }
+    fclose(arquivo);
+}
+
 /* percorre o heap e preenche, em 'estatisticas', a foto atual:
  * quantos blocos livres/ocupados, quanto espaço em cada e o maior livre */
-static void contar_blocos(void){
+void contar_blocos(void){
     estatisticas.total_livre = 0;
     estatisticas.total_ocupado = 0;
     estatisticas.maior_livre = 0;
@@ -270,11 +270,10 @@ static void splitting(Bloco* bloco, size_t tamanho){
     if (bloco->tamanho < tamanho + TAM_CAB + MIN_DADOS)
         return; /* sobra pequena: não divide */
     Bloco *novo = (Bloco *)((char *)bloco + TAM_CAB + tamanho);
-    novo->tamanho = /* TODO */ bloco->tamanho - tamanho - TAM_CAB;
+    novo->tamanho = bloco->tamanho - tamanho - TAM_CAB;
     novo->pedido = 0;
     novo->livre = 1;
 
-    /* TODO: encadear ’novo’ entre bloco e bloco->proximo (4 ponteiros!) */
     novo->proximo = bloco->proximo;
     novo->anterior = bloco;
 
@@ -287,11 +286,10 @@ static void splitting(Bloco* bloco, size_t tamanho){
     bloco->tamanho = tamanho;
 }
 
-static void coalescencia(Bloco *a, Bloco *b) { //próximo passo
+static void coalescencia(Bloco *a, Bloco *b) {
     /* pré-condição: a e b livres e b == a->proximo */
     a->tamanho += TAM_CAB + b->tamanho; 
 
-    /* TODO: religar a->proximo e o ’anterior’ do seguinte de b */
     a->proximo = b->proximo; //junta b dentro de a (b vem logo depois de a, e os dois estão livres).
     
     // a cresce com o cabeçalho e os dados de b;
@@ -301,11 +299,5 @@ static void coalescencia(Bloco *a, Bloco *b) { //próximo passo
         b->proximo->anterior = a;
     }
 
-    reiniciar_next_fit(); /* o next-fit pode estar guardando o bloco b, que deixou de existir */
-
-    /* em meu_free, depois de marcar livre: */
-    // if (coalescencia_ativa) {
-    /* TODO: caso seguinte livre -> fundir(b, b->proximo) */
-    /* TODO: caso anterior livre -> fundir(b->anterior, b) */
-    // }
+    next_fit_bloco_fundido(a, b); /* o next-fit pode estar guardando b, que deixou de existir */
 }

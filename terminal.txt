@@ -1,3 +1,5 @@
+make clean, make, make test, make exemplos, make valgrind, make bench e make analise
+
 Passo a passo dos testes
 
 0. Começar do zero, apagando os executáveis e objetos antigos:
@@ -33,9 +35,6 @@ valgrind --leak-check=full ./testes
 6. Programa demo (o main.c):
 
 ./alocador
-Ainda não funcionam
-make bench: os workloads ainda não têm main.
-make analise: precisa do comparativo.csv gerado pelos workloads e de pandas/matplotlib instalados.
 
 Outros testes:
 gcc -Wall -Wextra -Wpedantic -Wshadow -std=c11 -Isrc -fsyntax-only src/*.c

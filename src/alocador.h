@@ -35,5 +35,7 @@ void* meu_malloc(size_t tamanho);
 void meu_free(void* ptr);
 void mem_stats(void);
 void mem_dump(void);
+void mem_dump_csv(const char *nome); /* acrescenta os blocos atuais em resultados/blocos.csv */
+void contar_blocos(void); /* atualiza a foto atual do heap em 'estatisticas' */
 
 #endif // ALOCADOR_H
