@@ -8,6 +8,7 @@
 char *heap_base = NULL; /* início da região (o driver usa para calcular o endereco) */
 static size_t heap_total = 0;
 static Bloco *primeiro = NULL; /* cabeça da lista implícita */
+size_t min_dados = MIN_DADOS; /* o experimento de benchmarks/min_dados.c troca este valor */
 int coalescencia_ativa = 1; /* 1 = funde vizinhos livres no free; 0 = não funde */
 AlocStatus ultimo_status = ALOC_OK; /* deu certo ou qual erro aconteceu na última chamada */
 
@@ -267,7 +268,7 @@ void contar_blocos(void){
 }
 
 static void splitting(Bloco* bloco, size_t tamanho){
-    if (bloco->tamanho < tamanho + TAM_CAB + MIN_DADOS)
+    if (bloco->tamanho < tamanho + TAM_CAB + min_dados)
         return; /* sobra pequena: não divide */
     Bloco *novo = (Bloco *)((char *)bloco + TAM_CAB + tamanho);
     novo->tamanho = bloco->tamanho - tamanho - TAM_CAB;

@@ -9,9 +9,13 @@ Workloads:
 - workload2: alocações e liberações intercaladas, pseudoaleatórias com semente fixa (mede fragmentação externa ao longo do tempo)
 - workload3: padrão adversarial: alocar N blocos pequenos, liberar blocos alternados e tentar alocar um bloco grande que caberia na soma dos buracos, mas não em nenhum deles isoladamente
 
-workload1.c ┐
-workload2.c ├─> alocador (meu_malloc / meu_free) ─> resultados/comparativo.csv ─> src/analise.py ─> tabelas + gráficos em resultados/
-workload3.c ┘
+alocador.c + estrategias.c + estatisticas.c -> testes.c + driver.c (verificação)
+
+alocador.c + estrategias.c + estatisticas.c -> main.c (demo)
+
+                                                workload1.c ┐
+alocador.c + estrategias.c + estatisticas.c ->  workload2.c ├─> resultados/comparativo.csv ─> src/analise.py ─> tabelas + gráficos em resultados/ (experimentos)
+                                                workload3.c ┘
 """
 
 # python3 src/analise.py   (ou: make analise)
@@ -307,3 +311,37 @@ for eixo, operacao in zip(eixos, ['malloc', 'free']):
 eixos[0].invert_yaxis() #malloc_real em cima (os dois gráficos dividem o mesmo eixo y, então inverte uma vez só)
 eixos[0].legend(frameon=False, loc='upper right')
 salvar('tempo_malloc.png')
+
+# -------------------------- EFEITO DO MIN_DADOS (pergunta 5 do relatório) -----------------------
+# cada linha do csv é uma execução; a média das sementes evita depender de uma única sequência de pedidos
+print('Efeito do MIN_DADOS: média de 30 sementes')
+md = pd.read_csv(saida / 'min_dados.csv')
+md['taxa_falha'] = 100 * md['falhas'] / (md['alocacoes_ok'] + md['falhas'])
+md['frag_externa_pct'] = 100 * md['frag_externa_media']
+medias_md = md.groupby(['min_dados', 'estrategia'])[['alocacoes_ok', 'taxa_falha', 'frag_interna_media', 'frag_externa_pct', 'n_livres_medio']].mean().reset_index()
+print(medias_md.round(2))
+medias_md.to_csv(saida / 'resumo_min_dados.csv', index=False)
+
+metricas = [
+    ('frag_interna_media', 'Fragmentação interna média (bytes)'),
+    ('frag_externa_pct', 'Fragmentação externa média (%)'),
+    ('taxa_falha', 'Taxa de falha (%)'),
+]
+estilos = {'first_fit': ('#2a78d6', 'o'), 'next_fit': ('#eb6834', 's'), 'best_fit': ('#1baf7a', '^'), 'worst_fit': ('#eda100', 'D')} #as marcas diferentes ajudam no daltonismo
+fig, eixos = plt.subplots(1, 3, figsize=(14, 4.2))
+for eixo, (coluna, titulo) in zip(eixos, metricas):
+    for estrategia in ordem:
+        grupo = medias_md[medias_md['estrategia'] == estrategia]
+        cor, marca = estilos[estrategia]
+        eixo.plot(grupo['min_dados'], grupo[coluna], color=cor, marker=marca, markersize=7, linewidth=2, label=estrategia)
+    eixo.set_xticks(sorted(md['min_dados'].unique()))
+    eixo.set_xlabel('MIN_DADOS (bytes)')
+    eixo.set_title(titulo, loc='left', fontsize=11)
+    eixo.set_ylim(bottom=0)
+    eixo.grid(True, axis='y', color='#dddddd')
+    eixo.spines[['top', 'right']].set_visible(False)
+plt.tight_layout(rect=(0, 0.08, 1, 1)) #deixa espaço embaixo para a legenda
+linhas, nomes = eixos[0].get_legend_handles_labels()
+fig.legend(linhas, nomes, loc='lower center', ncol=4, frameon=False)
+plt.savefig(saida / 'min_dados.png', dpi=150)
+plt.close()

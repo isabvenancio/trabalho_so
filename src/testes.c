@@ -107,6 +107,17 @@ void teste_splitting(void) {
     checar(CAB(q)->tamanho == 1000 - TAM_CAB, "teste_splitting");
     checar(CAB(q)->proximo == NULL, "teste_splitting");
     checar(estatisticas.frag_interna == 40, "teste_splitting"); /* sobra não dividida conta como interna */
+
+    /* caso 3: mesma sobra, valores diferentes de min_dados. Bloco de 960, pedido de 800: sobra de 160 */
+    mem_init(1000);
+    min_dados = 128; /* 160 >= 40 + 128 é falso: não divide */
+    void *r = meu_malloc(800);
+    checar(r != NULL && CAB(r)->proximo == NULL, "teste_splitting");
+    mem_init(1000);
+    min_dados = 120; /* 160 >= 40 + 120 é verdadeiro: divide */
+    r = meu_malloc(800);
+    checar(r != NULL && CAB(r)->proximo != NULL, "teste_splitting");
+    min_dados = MIN_DADOS;
 }
 
 void teste_coalescencia(void) {

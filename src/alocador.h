@@ -25,6 +25,7 @@ typedef enum status_aloc {
     ERR_DOUBLE_FREE
 } AlocStatus;
 
+extern size_t min_dados; /* menor sobra que vira um bloco novo no splitting (padrão: MIN_DADOS) */
 extern int coalescencia_ativa; /* 1 = funde vizinhos livres no free; 0 = não funde */
 extern char *heap_base;        /* início do heap simulado (NULL antes do mem_init) */
 extern AlocStatus ultimo_status; /* resultado da última chamada de meu_malloc ou meu_free */
