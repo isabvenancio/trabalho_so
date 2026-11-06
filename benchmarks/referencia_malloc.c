@@ -22,9 +22,9 @@ void rodar(const char *nome, int usar_malloc_real) {
         int sorteio = rand() % 100;
         size_t tamanho = 10 + rand() % 141; /* de 10 a 150 bytes */
         int posicao = rand();
-        long inicio, tempo;
+        long inicio, tempo; //o tempo de cada operação é agora_ns() depois menos agora_ns() antes
 
-        if (sorteio < 60 || n_ativos == 0) {
+        if (sorteio < 60 || n_ativos == 0) { //60% alocam e 40% liberam, como no workload 2
             void *p;
             inicio = agora_ns();
             if (usar_malloc_real) p = malloc(tamanho);
@@ -33,9 +33,9 @@ void rodar(const char *nome, int usar_malloc_real) {
 
             ativos[n_ativos] = p;
             n_ativos++;
-            printf("%s,malloc,%ld\n", nome, tempo);
+            printf("%s,malloc,%ld\n", nome, tempo); //uma linha do CSV: quem,operacao,tempo_ns
         } else {
-            int escolhido = posicao % n_ativos;
+            int escolhido = posicao % n_ativos; //sorteia um dos blocos ainda ativos
             inicio = agora_ns();
             if (usar_malloc_real) free(ativos[escolhido]);
             else                  meu_free(ativos[escolhido]);
@@ -53,10 +53,10 @@ void rodar(const char *nome, int usar_malloc_real) {
 }
 
 int main(void) {
-    printf("quem,operacao,tempo_ns\n");
-    rodar("malloc_real", 1);
+    printf("quem,operacao,tempo_ns\n"); //cabeçalho do CSV
+    rodar("malloc_real", 1); //primeiro o malloc real da biblioteca do C
 
-    for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) {
+    for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //depois o nosso, com cada estratégia
         mem_init(HEAP);
         rodar(nomes_estrategias[estrategia_atual], 0);
         mem_destroy();

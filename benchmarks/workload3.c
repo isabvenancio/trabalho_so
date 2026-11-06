@@ -18,35 +18,35 @@ int main(void) {
 
     /* 1 = coalescência ligada, 0 = desligada */
     for (coalescencia_ativa = 1; coalescencia_ativa >= 0; coalescencia_ativa--) {
-        for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) {
-            void *blocos[N_BLOCOS];
-            int operacao = 0;
+        for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //uma vez para cada estratégia
+            void *blocos[N_BLOCOS]; //ponteiros dos blocos pequenos
+            int operacao = 0; //número da operação, para a coluna 'operacao' do CSV
 
             mem_init(heap);
 
-            for (int i = 0; i < N_BLOCOS; i++) {
+            for (int i = 0; i < N_BLOCOS; i++) { //1. enche o heap com os blocos pequenos
                 operacao++;
                 blocos[i] = alocar_e_registrar("workload3", operacao, heap, TAMANHO);
             }
 
-            for (int i = 0; i < N_BLOCOS; i += 2) { /* índices pares: 0, 2, 4... */
+            for (int i = 0; i < N_BLOCOS; i += 2) { /* 2. libera os de índice par: 0, 2, 4... abrindo buracos separados */
                 operacao++;
                 liberar_e_registrar("workload3", operacao, heap, blocos[i]);
             }
 
             operacao++;
-            alocar_e_registrar("workload3", operacao, heap, pedido); /* deve falhar nos dois modos */
+            alocar_e_registrar("workload3", operacao, heap, pedido); /* 3. pede a soma dos buracos: deve falhar nos dois modos */
             mem_dump_csv("workload3_falha"); /* os buracos, no momento da falha */
 
-            for (int i = 1; i < N_BLOCOS; i += 2) { /* índices ímpares: 1, 3, 5... */
+            for (int i = 1; i < N_BLOCOS; i += 2) { /* 4. libera os de índice ímpar: 1, 3, 5... agora o heap está todo livre */
                 operacao++;
                 liberar_e_registrar("workload3", operacao, heap, blocos[i]);
             }
 
             operacao++;
-            alocar_e_registrar("workload3", operacao, heap, pedido); /* só dá certo com coalescência */
+            alocar_e_registrar("workload3", operacao, heap, pedido); /* 5. repete o pedido: só dá certo com coalescência */
 
-            mem_dump_csv("workload3");
+            mem_dump_csv("workload3"); //como o heap ficou no fim
             mem_destroy();
         }
     }

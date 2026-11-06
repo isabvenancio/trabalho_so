@@ -4,6 +4,9 @@ Análise dos resultados de resultados/comparativo.csv
 Métricas principais: fragmentação interna, fragmentação externa, operações por
 alocação, taxa de falha e tempo de execução.
 
+Gera em resultados/: resumo.csv (tabela do TSO), workload2_frag_externa.png, coalescencia.png, escala.png,
+barra_heap.png, tempo_malloc.png e min_dados.png, além das tabelas impressas no terminal.
+
 Workloads:
 - workload1: alocações sequenciais de tamanhos variados, sem liberação (mede uso puro de espaço e fragmentação interna)
 - workload2: alocações e liberações intercaladas, pseudoaleatórias com semente fixa (mede fragmentação externa ao longo do tempo)
@@ -97,30 +100,15 @@ finais = finais.reset_index()
 com_coal = df[df['coalescencia'] == 1]
 finais_coal = finais[finais['coalescencia'] == 1]
 
-print('Resumo por workload e estratégia')
-print(finais.groupby(['workload', 'estrategia', 'coalescencia']).agg({ #groupby com função sum e mean
-    'alocacoes_ok': 'sum', #soma
-    'falhas': 'sum',
-    'frag_externa_media': 'mean', #media
-    'examinados_por_alocacao': 'mean',
-}).reset_index())
-
 # ---------------------- WORKLOAD 1 - ALOCAÇÕES SEQUENCIAS--------------------------
 print('Workload 1 - alocações sequenciais')
 w1 = finais_coal[finais_coal['workload'] == 'workload1'].copy()
+# sem liberação, todas as estratégias alocam igual: só muda quantos blocos cada uma examina
 print(w1.groupby('estrategia').agg({ #groupby com funcao sum e maximo
     'alocacoes_ok': 'sum',
     'frag_interna': 'max',
     'overhead': 'max' #bytes gastos com cabeçalhos
 }).reset_index())
-
-plt.figure(figsize=(8, 5))
-for estrategia, grupo in w1.groupby('estrategia'):
-    plt.bar(estrategia, grupo['frag_interna'].iloc[-1])
-plt.xlabel('Estratégia')
-plt.ylabel('Fragmentação interna (bytes)')
-plt.title('Workload 1 — Fragmentação interna')
-salvar('workload1_frag_interna.png') #ao inves de show()
 
 # -------------------- WORKLOAD 2 - OPERAÇÕES INTERCALADAS----------------------- 
 print('Workload 2 - operações intercaladas')
@@ -202,50 +190,19 @@ if len(esc) > 0:
 else:
     print('(o csv não tem execuções de escala)')
 
-# ------------------- NUMERO DE ALOCAÇÕES POR OPERAÇÃO----------------------
-print('Número de operações por alocação')
-sem_escala = finais_coal[finais_coal['workload'] != 'escala']
-custo = sem_escala.groupby('estrategia')['examinados_por_alocacao'].mean().sort_values()
-print(custo)
-
-plt.figure(figsize=(8, 5))
-plt.bar(custo.index, custo.values)
-plt.xlabel('Estratégia')
-plt.ylabel('Blocos examinados por alocação')
-plt.title('Custo médio da busca')
-salvar('custo_busca.png')#ao inves de show()
-
 # --------------------- TEMPO DE EXECUÇÃO------------------------ 
 # usa as execuções normais: a escala só grava a primeira e a última operação de cada execução
 sem_escala_linhas = com_coal[com_coal['workload'] != 'escala']
 
-if 'tempo_alloc_ns' in df.columns:
-    print('Tempo de execução (alocação): mediana (p50) e percentil 95 (p95)')
-    print(sem_escala_linhas.groupby('estrategia')['tempo_alloc_ns'].agg(
-        p50=lambda x: np.percentile(x.dropna(), 50), #dropna com lambda é pra tirar os valores com None, ao inves de ficar renomeando
-        p95=lambda x: np.percentile(x.dropna(), 95),
-    ).reset_index())
+for coluna, nome in [('tempo_alloc_ns', 'alocação'), ('tempo_free_ns', 'liberação')]: #mesma conta para os dois tempos
+    if coluna in df.columns:
+        print(f'Tempo de execução ({nome}): mediana (p50) e percentil 95 (p95), em ns')
+        print(sem_escala_linhas.groupby('estrategia')[coluna].agg(
+            p50=lambda x: np.percentile(x.dropna(), 50), #dropna com lambda é pra tirar os valores com None, ao inves de ficar renomeando
+            p95=lambda x: np.percentile(x.dropna(), 95),
+        ).reset_index())
 
-if 'tempo_free_ns' in df.columns:
-    print('Tempo de execução (liberação): mediana (p50) e percentil 95 (p95)')
-    print(sem_escala_linhas.groupby('estrategia')['tempo_free_ns'].agg(
-        p50=lambda x: np.percentile(x.dropna(), 50),
-        p95=lambda x: np.percentile(x.dropna(), 95),
-    ).reset_index())
-
-# -------------------------- TABELONA FINAL----------------------- 
-print('Tabela final resumida')
-resumo = (sem_escala.groupby('estrategia').agg({
-    'alocacoes_ok': 'sum',
-    'falhas': 'sum',
-    'frag_externa_media': 'mean',
-    'examinados_por_alocacao': 'mean',
-}).reset_index())
-print(resumo)
-
-resumo.to_csv(saida / 'resumo.csv', index=False) # manda essa tabelona para um arquivo de planilha
-
-# -------------------------- BARRA DO HEAP (opcional do TSO) -----------------------
+# -------------------------- BARRA DO HEAP -----------------------
 # cada barra é o heap inteiro no fim da execução, com um retângulo para cada bloco
 print('Barra do heap')
 blocos = pd.read_csv(saida / 'blocos.csv').drop_duplicates() #rodar um workload de novo acrescenta linhas iguais
@@ -345,3 +302,15 @@ linhas, nomes = eixos[0].get_legend_handles_labels()
 fig.legend(linhas, nomes, loc='lower center', ncol=4, frameon=False)
 plt.savefig(saida / 'min_dados.png', dpi=150)
 plt.close()
+
+
+# -------------------------- TABELONA FINAL -----------------------
+# Estratégia | Aloc. OK | Falhas | Frag. ext. (%) | Maior livre | Exam./aloc., uma tabela por workload, coalescência ligada
+print('Tabela final resumida (modelo do TSO)')
+resumo = finais_coal[finais_coal['workload'] != 'escala'][['workload', 'estrategia', 'alocacoes_ok', 'falhas', 'frag_externa_media', 'maior_livre', 'examinados_por_alocacao']].copy()
+resumo['frag_externa_media'] = (100 * resumo['frag_externa_media']).round(1) #em %: média ao longo da execução
+resumo['examinados_por_alocacao'] = resumo['examinados_por_alocacao'].round(2)
+resumo.columns = ['workload', 'estrategia', 'aloc_ok', 'falhas', 'frag_ext_pct', 'maior_livre', 'exam_por_aloc'] #nomes curtos, como na tabela do TSO
+print(resumo.to_string(index=False))
+
+resumo.to_csv(saida / 'resumo.csv', index=False) # manda essa tabelona para um arquivo de planilha
