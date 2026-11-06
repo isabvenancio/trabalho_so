@@ -1,5 +1,9 @@
 # make gera o alocador (a partir do main.c)
 # make test, make exemplos, make valgrind, make bench, make analise, make clean
+# Outros testes:
+# gcc -Wall -Wextra -Wpedantic -Wshadow -std=c11 -Isrc -fsyntax-only src/*.c
+# for f in src/alocador.c src/estrategias.c src/driver.c src/testes.c; do gcc -std=c11 -Isrc -fanalyzer -c $f -o /dev/null; done
+# ./driver /tmp/aleatorio_best.txt 2>&1 | tail -8
 CC     = gcc
 CFLAGS = -Wall -Wextra -g -std=c11 -Isrc
 

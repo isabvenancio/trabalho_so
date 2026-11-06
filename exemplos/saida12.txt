@@ -1,0 +1,11 @@
+Bloco 1 alocado em endereco 0, tamanho 104
+Bloco 2 alocado em endereco 144, tamanho 200
+Bloco 3 alocado em endereco 384, tamanho 56
+Bloco 2 liberado
+Bloco 4 alocado em endereco 144, tamanho 120
+Endereco   Tamanho  Estado
+0          104      OCUPADO
+144        120      OCUPADO
+304        40       LIVRE
+384        56       OCUPADO
+480        480      LIVRE

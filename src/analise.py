@@ -4,7 +4,7 @@ Análise dos resultados de resultados/comparativo.csv
 Métricas principais: fragmentação interna, fragmentação externa, operações por
 alocação, taxa de falha e tempo de execução.
 
-Gera em resultados/: resumo.csv (tabela do TSO), workload2_frag_externa.png, coalescencia.png, escala.png,
+Gera em resultados/: resumo.csv (tabela do TSO, a única tabela salva; as outras só aparecem no terminal), workload2_frag_externa.png, coalescencia.png, escala.png,
 barra_heap.png, tempo_malloc.png e min_dados.png, além das tabelas impressas no terminal.
 
 Workloads:
@@ -250,7 +250,6 @@ tabela_tempos = tempos.groupby(['operacao', 'quem'])['tempo_ns'].agg(
     p95=lambda x: np.percentile(x, 95),
 ).reset_index()
 print(tabela_tempos)
-tabela_tempos.to_csv(saida / 'resumo_tempo_malloc.csv', index=False)
 
 ordem_tempo = ['malloc_real'] + ordem
 fig, eixos = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
@@ -277,7 +276,6 @@ md['taxa_falha'] = 100 * md['falhas'] / (md['alocacoes_ok'] + md['falhas'])
 md['frag_externa_pct'] = 100 * md['frag_externa_media']
 medias_md = md.groupby(['min_dados', 'estrategia'])[['alocacoes_ok', 'taxa_falha', 'frag_interna_media', 'frag_externa_pct', 'n_livres_medio']].mean().reset_index()
 print(medias_md.round(2))
-medias_md.to_csv(saida / 'resumo_min_dados.csv', index=False)
 
 metricas = [
     ('frag_interna_media', 'Fragmentação interna média (bytes)'),
