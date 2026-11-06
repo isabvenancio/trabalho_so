@@ -23,6 +23,7 @@ Bloco *buscar_first_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
     for (Bloco *bloco = inicio; bloco != NULL; bloco = bloco->proximo){ //percorre do primeiro ao último bloco
         (*examinados)++; //conta mais um bloco olhado
 
+        /* TODO: se b é candidato e é melhor que ’melhor’, atualize */
         if (bloco->livre && bloco->tamanho >= tamanho){
             return bloco; // se o bloco é livre e tem tamanho suficiente, retorna o bloco
         }
@@ -65,6 +66,7 @@ Bloco* buscar_best_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
     Bloco *melhor = NULL; //menor bloco que serve, até agora
     for (Bloco *bloco = inicio; bloco != NULL; bloco = bloco->proximo) { //precisa olhar todos os blocos
         (*examinados)++;
+        /* TODO: se b é candidato e é melhor que ’melhor’, atualize */
         if (bloco->livre && bloco->tamanho >= tamanho) {
             if (melhor == NULL || bloco->tamanho < melhor->tamanho) { //'<' e não '<=': no empate fica o primeiro encontrado
                 melhor = bloco; //se o bloco é livre e tem tamanho suficiente, e é melhor que o melhor bloco encontrado até agora, atualiza o melhor bloco
@@ -78,6 +80,7 @@ Bloco* buscar_worst_fit(Bloco *inicio, size_t tamanho, size_t *examinados){
     Bloco *pior = NULL; //maior bloco que serve, até agora
     for (Bloco *bloco = inicio; bloco != NULL; bloco = bloco->proximo) { //precisa olhar todos os blocos
         (*examinados)++;
+        /* TODO: se b é candidato e é pior que ’pior’, atualize */
         if (bloco->livre && bloco->tamanho >= tamanho) {
             if (pior == NULL || bloco->tamanho > pior->tamanho) { //'>' e não '>=': no empate fica o primeiro encontrado
                 pior = bloco; //se o bloco é livre e tem tamanho suficiente, e é pior que o pior bloco encontrado até agora, atualiza o pior bloco

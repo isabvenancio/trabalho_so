@@ -65,13 +65,13 @@ bench: $(BENCHMARKS)
 analise:
 	python3 src/analise.py $(CSV)
 
-# make valgrind -> roda os testes, os exemplos e os benchmarks dentro do valgrind
+# make valgrind -> roda os testes e os exemplos dentro do valgrind
+# (os benchmarks ficam de fora: eles gravam em resultados/ e o valgrind duplicaria as linhas do blocos.csv)
 # a saída é escondida; se der erro, rode o comando mostrado na mensagem para ver os detalhes
 VALGRIND = valgrind -q --leak-check=full --error-exitcode=1
-valgrind: testes driver $(BENCHMARKS)
+valgrind: testes driver
 	@$(VALGRIND) ./testes > /dev/null 2>&1 || { echo "valgrind achou erro: rode $(VALGRIND) ./testes"; exit 1; }
 	@for e in exemplos/entrada*.txt; do $(VALGRIND) ./driver $$e > /dev/null 2>&1 || { echo "valgrind achou erro: rode $(VALGRIND) ./driver $$e"; exit 1; }; done
-	@for w in $(BENCHMARKS); do $(VALGRIND) ./$$w > /dev/null 2>&1 || { echo "valgrind achou erro: rode $(VALGRIND) ./$$w"; exit 1; }; done
 	@echo "valgrind: nenhum erro de memoria nem vazamento"
 
 # make clean -> apaga só os programas compilados (os resultados ficam)

@@ -48,20 +48,24 @@ void rodar(const char *workload, size_t heap, int operacoes, int todas_linhas) {
 }
 
 int main(void) {
+    Estrategia estrategias[] = { FIRST_FIT, NEXT_FIT, BEST_FIT, WORST_FIT };
     size_t heaps[] = { 1000, 5000, 20000 };
     int operacoes[] = { 100, 1000, 10000 };
 
     /* workload 2 normal e experimento de coalescência: 1 = ligada, 0 = desligada */
-    for (coalescencia_ativa = 1; coalescencia_ativa >= 0; coalescencia_ativa--) { //roda com 1 e depois com 0
-        for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //uma vez para cada estratégia
+    for (int c = 1; c >= 0; c--) { //roda com 1 e depois com 0
+        coalescencia_ativa = c;
+        for (int i = 0; i < 4; i++) { //uma vez para cada estratégia
+            estrategia_atual = estrategias[i];
             srand(SEMENTE); /* mesma semente: todas as estratégias recebem os mesmos pedidos */
             rodar("workload2", HEAP, OPERACOES, 1);
         }
     }
 
     /* experimento de escala, com a coalescência ligada: 3 heaps x 3 números de operações */
-    coalescencia_ativa = 1; //o laço de cima termina com -1: volta para ligada
-    for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) {
+    coalescencia_ativa = 1; //o laço de cima termina com a coalescência desligada: volta para ligada
+    for (int i = 0; i < 4; i++) {
+        estrategia_atual = estrategias[i];
         for (int h = 0; h < 3; h++) {
             for (int o = 0; o < 3; o++) {
                 srand(SEMENTE); //mesma semente: todas as estratégias recebem os mesmos pedidos

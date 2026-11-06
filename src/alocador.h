@@ -22,8 +22,8 @@ typedef struct bloco {
 typedef enum status_aloc {
     ALOC_OK = 0,
     ERR_HEAP_NOT_INITIALIZED,
-    ERR_OUT_OF_MEMORY,
-    ERR_FRAGMENTATION,
+    ERR_OUT_OF_MEMORY,     /* não há espaço livre suficiente nem somando tudo */
+    ERR_FRAGMENTATION,     /* há espaço livre total, mas nenhum bloco contíguo */
     ERR_BAD_POINTER,
     ERR_DOUBLE_FREE
 } AlocStatus;

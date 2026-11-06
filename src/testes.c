@@ -3,6 +3,8 @@
  * Para rodar: make test (ou make valgrind, que roda dentro do valgrind) */
 #include <stdio.h>
 #include "alocador.h"
+
+/*make testes && valgrind --leak-check=full ./testes*/
 #include "estatisticas.h"
 #include "estrategias.h"
 

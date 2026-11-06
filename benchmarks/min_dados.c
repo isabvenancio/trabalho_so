@@ -54,11 +54,13 @@ void rodar(int semente) {
 
 int main(void) {
     size_t valores[] = { 8, 32, 64, 128 }; //valores de min_dados testados (o padrão do alocador é 8)
+    Estrategia estrategias[] = { FIRST_FIT, NEXT_FIT, BEST_FIT, WORST_FIT };
 
     printf("min_dados,estrategia,semente,alocacoes_ok,falhas,falhas_frag,frag_interna_media,frag_externa_media,n_livres_medio\n");
     for (int v = 0; v < 4; v++) {
         min_dados = valores[v]; //troca a variável que o splitting usa
-        for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) {
+        for (int i = 0; i < 4; i++) {
+            estrategia_atual = estrategias[i];
             for (int semente = 1; semente <= SEMENTES; semente++) {
                 rodar(semente);
             }

@@ -11,7 +11,10 @@
 #define SEMENTE 42
 
 int main(void) {
-    for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //roda uma vez para cada estratégia
+    Estrategia estrategias[] = { FIRST_FIT, NEXT_FIT, BEST_FIT, WORST_FIT };
+
+    for (int i = 0; i < 4; i++) { //roda uma vez para cada estratégia
+        estrategia_atual = estrategias[i];
         srand(SEMENTE); /* mesma semente: todas as estratégias recebem os mesmos pedidos */
         mem_init(HEAP);
 

@@ -6,6 +6,7 @@
  * Se o arquivo nao tiver HEAP, o heap tem HEAP_PADRAO bytes.
  * Uso: ./driver exemplos/entrada1.txt (o make exemplos compara a saida com exemplos/saida1.txt) */
 #include <stdio.h>
+#include <stdlib.h> /* atol */
 #include <string.h> /* strcmp */
 #include "alocador.h"
 #include "estrategias.h"
@@ -26,19 +27,21 @@ int main(int argc, char *argv[]) {
 
     void *ponteiros[MAX_BLOCOS + 1]; /* ponteiros[id]; a posicao 0 nao e usada */
     int n_blocos = 0; //quantos blocos já foram alocados (é o último id)
-    char linha[256];  //a linha inteira lida do arquivo
-    char comando[32]; //a primeira palavra da linha: ALLOC, FREE...
-    char texto[32];   //o argumento quando ele é texto (ESTRATEGIA best)
-    long valor;       //o argumento quando ele é número (ALLOC 100)
+    char linha[256];    //a linha inteira lida do arquivo
+    char comando[32];   //a primeira palavra da linha: ALLOC, FREE...
+    char argumento[32]; //a segunda palavra: um número (ALLOC 100) ou um nome (ESTRATEGIA best)
+    long valor;         //o argumento convertido para número
 
     mem_init(HEAP_PADRAO);
 
     while (fgets(linha, sizeof(linha), f) != NULL) { //lê uma linha por vez até o fim do arquivo
-        if (linha[0] == '#' || sscanf(linha, "%31s", comando) != 1)
+        argumento[0] = '\0'; //se a linha não tiver argumento, ele fica vazio
+        int lidos = sscanf(linha, "%31s %31s", comando, argumento); //lê as duas primeiras palavras
+        if (linha[0] == '#' || lidos < 1)
             continue; /* comentario ou linha vazia */
+        valor = atol(argumento); //"100" vira 100 (um texto que não é número vira 0)
 
-        //em cada comando, o sscanf com %*s pula a primeira palavra e lê o argumento
-        if (strcmp(comando, "ALLOC") == 0 && sscanf(linha, "%*s %ld", &valor) == 1) {
+        if (strcmp(comando, "ALLOC") == 0 && lidos == 2) {
             if (valor <= 0) {
                 printf("ERRO: tamanho invalido (%ld)\n", valor);
             } else if (n_blocos == MAX_BLOCOS) {
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]) {
                            n_blocos, (size_t)((char *)b - heap_base), b->tamanho);
                 }
             }
-        } else if (strcmp(comando, "FREE") == 0 && sscanf(linha, "%*s %ld", &valor) == 1) {
+        } else if (strcmp(comando, "FREE") == 0 && lidos == 2) {
             if (valor < 1 || valor > n_blocos) {
                 printf("ERRO: tentativa de liberar bloco inexistente (id %ld)\n", valor);
             } else {
@@ -69,20 +72,20 @@ int main(int argc, char *argv[]) {
             mem_dump();
         } else if (strcmp(comando, "STATS") == 0) {
             mem_stats();
-        } else if (strcmp(comando, "HEAP") == 0 && sscanf(linha, "%*s %ld", &valor) == 1) {
+        } else if (strcmp(comando, "HEAP") == 0 && lidos == 2) {
             if (valor <= 0) {
                 printf("ERRO: tamanho de heap invalido (%ld)\n", valor);
             } else {
                 mem_init((size_t)valor); //o mem_init libera o heap antigo antes de criar o novo
                 n_blocos = 0; /* os blocos do heap antigo deixaram de existir */
             }
-        } else if (strcmp(comando, "ESTRATEGIA") == 0 && sscanf(linha, "%*s %31s", texto) == 1) {
-            if (strcmp(texto, "first") == 0)      estrategia_atual = FIRST_FIT;
-            else if (strcmp(texto, "next") == 0)  estrategia_atual = NEXT_FIT;
-            else if (strcmp(texto, "best") == 0)  estrategia_atual = BEST_FIT;
-            else if (strcmp(texto, "worst") == 0) estrategia_atual = WORST_FIT;
-            else printf("ERRO: estrategia desconhecida (%s)\n", texto);
-        } else if (strcmp(comando, "COALESCENCIA") == 0 && sscanf(linha, "%*s %ld", &valor) == 1) {
+        } else if (strcmp(comando, "ESTRATEGIA") == 0 && lidos == 2) {
+            if (strcmp(argumento, "first") == 0)      estrategia_atual = FIRST_FIT;
+            else if (strcmp(argumento, "next") == 0)  estrategia_atual = NEXT_FIT;
+            else if (strcmp(argumento, "best") == 0)  estrategia_atual = BEST_FIT;
+            else if (strcmp(argumento, "worst") == 0) estrategia_atual = WORST_FIT;
+            else printf("ERRO: estrategia desconhecida (%s)\n", argumento);
+        } else if (strcmp(comando, "COALESCENCIA") == 0 && lidos == 2) {
             coalescencia_ativa = (valor != 0); //qualquer valor diferente de 0 liga
         } else {
             printf("ERRO: comando invalido: %s", linha); //comando desconhecido ou sem o argumento

@@ -56,7 +56,9 @@ int main(void) {
     printf("quem,operacao,tempo_ns\n"); //cabeçalho do CSV
     rodar("malloc_real", 1); //primeiro o malloc real da biblioteca do C
 
-    for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //depois o nosso, com cada estratégia
+    Estrategia estrategias[] = { FIRST_FIT, NEXT_FIT, BEST_FIT, WORST_FIT };
+    for (int i = 0; i < 4; i++) { //depois o nosso, com cada estratégia
+        estrategia_atual = estrategias[i];
         mem_init(HEAP);
         rodar(nomes_estrategias[estrategia_atual], 0);
         mem_destroy();

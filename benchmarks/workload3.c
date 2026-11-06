@@ -16,9 +16,13 @@ int main(void) {
     size_t heap = N_BLOCOS * (TAM_CAB + TAMANHO); /* tamanho exato: não sobra nada no fim do heap */
     size_t pedido = TAMANHO * (N_BLOCOS / 2);     /* a soma dos buracos */
 
+    Estrategia estrategias[] = { FIRST_FIT, NEXT_FIT, BEST_FIT, WORST_FIT };
+
     /* 1 = coalescência ligada, 0 = desligada */
-    for (coalescencia_ativa = 1; coalescencia_ativa >= 0; coalescencia_ativa--) {
-        for (estrategia_atual = FIRST_FIT; estrategia_atual <= WORST_FIT; estrategia_atual++) { //uma vez para cada estratégia
+    for (int c = 1; c >= 0; c--) {
+        coalescencia_ativa = c;
+        for (int i = 0; i < 4; i++) { //uma vez para cada estratégia
+            estrategia_atual = estrategias[i];
             void *blocos[N_BLOCOS]; //ponteiros dos blocos pequenos
             int operacao = 0; //número da operação, para a coluna 'operacao' do CSV
 
