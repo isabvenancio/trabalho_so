@@ -22,11 +22,10 @@ static void coalescencia(Bloco *a, Bloco *b);
 
 /* funções principais */
 void mem_init(size_t heap_size) { //prepara o heap
-    if (heap_base != NULL) //já existia um heap
-        mem_destroy(); /* reinicialização: libera o heap anterior para não vazar */
+    mem_destroy(); /* reinicialização: libera o heap anterior para não vazar (se não existia, free(NULL) não faz nada) */
 
-    if (heap_size < TAM_CAB + MIN_DADOS) {
-        fprintf(stderr, "ERRO: tamanho do heap insuficiente\n"); //erro padrão, recusa um heap menor q um cabeçalho mais 8 bytes
+    if (heap_size < TAM_CAB + min_dados) {
+        fprintf(stderr, "ERRO: tamanho do heap insuficiente\n"); //erro padrão, recusa um heap menor q um cabeçalho mais min_dados bytes
         return;
     }
     heap_base = malloc(heap_size); /* ÚNICO uso do malloc real */
@@ -61,15 +60,13 @@ void mem_destroy(void) {
 void* meu_malloc(size_t tamanho){//aloca
     /* coordena alinhamento, busca, splitting*/
     /* retorna ponteiro para o bloco alocado */
+    ultimo_status = ALOC_OK; //começa como "deu certo": só os erros abaixo trocam o valor
     if (heap_base == NULL) { //erro se o heap não foi inicializado
         fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED: chame mem_init antes de alocar\n");
         ultimo_status = ERR_HEAP_NOT_INITIALIZED;
         return NULL;
     }
-    if (tamanho == 0) {
-        ultimo_status = ALOC_OK; /* pedir 0 bytes não é erro: só devolve NULL */
-        return NULL;
-    }
+    if (tamanho == 0) return NULL; /* pedir 0 bytes não é erro: só devolve NULL */
 
     estatisticas.n_malloc++; //conta o pedido
     if (tamanho > heap_total) { //se o pedido for maior que o heap inteiro, é falha imediata
@@ -109,15 +106,12 @@ void* meu_malloc(size_t tamanho){//aloca
     bloco->pedido = tamanho; //guarda o que o usuário pediu
     estatisticas.frag_interna += bloco->tamanho - tamanho; //o que o bloco tem a mais do que foi pedido é fragmentação interna
 
-    ultimo_status = ALOC_OK;
     return (char *)bloco + TAM_CAB; //devolve o endereço dos dados: pula o cabeçalho
 }
 
 void meu_free(void* ptr){//libera e faz coalescência
-    if (ptr == NULL) {
-        ultimo_status = ALOC_OK; /* free(NULL) não faz nada e não é erro */
-        return;
-    }
+    ultimo_status = ALOC_OK; //começa como "deu certo": só os erros abaixo trocam o valor
+    if (ptr == NULL) return; /* free(NULL) não faz nada e não é erro */
     if (heap_base == NULL) { //heap não inicializado é erro
         fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED: chame mem_init antes de liberar\n");
         ultimo_status = ERR_HEAP_NOT_INITIALIZED;
@@ -153,7 +147,6 @@ void meu_free(void* ptr){//libera e faz coalescência
     /* TODO: marcar como livre */
     bloco->livre = 1; //marca como livre
     bloco->pedido = 0;
-    ultimo_status = ALOC_OK;
 
     /* em meu_free, depois de marcar livre: */
     //se coalescencia_ativa: funde com o próximo, se estiver livre, e depois com o anterior, se estiver livre

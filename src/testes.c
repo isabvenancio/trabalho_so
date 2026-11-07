@@ -42,7 +42,6 @@ void teste_alocacao_simples(void) {
     mem_init(1000);
     void *p = meu_malloc(100);
     CHECAR(p != NULL);
-    if (p == NULL) return;
     CHECAR((size_t)p % ALINHAMENTO == 0);
     CHECAR(CAB(p)->tamanho == 104); /* 100 alinhado para 104 */
     CHECAR(CAB(p)->pedido == 100);
@@ -56,7 +55,6 @@ void teste_multiplas_alocacoes(void) {
     char *b = meu_malloc(200);
     char *c = meu_malloc(50);
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a == NULL || b == NULL || c == NULL) return;
     /* em heap vazio os blocos ficam lado a lado: dados + cabeçalho do seguinte */
     CHECAR(b == a + 104 + TAM_CAB);
     CHECAR(c == b + 200 + TAM_CAB);
@@ -74,7 +72,6 @@ void teste_liberacao(void) {
     void *b = meu_malloc(100);
     void *c = meu_malloc(100);
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a == NULL || b == NULL || c == NULL) return;
     meu_free(b);
     /* só B muda de estado; vizinhos ocupados, então não há fusão */
     CHECAR(CAB(b)->livre == 1);
@@ -90,12 +87,10 @@ void teste_splitting(void) {
     mem_init(1000);
     void *p = meu_malloc(100);
     CHECAR(p != NULL);
-    if (p == NULL) return;
     Bloco *h = CAB(p);
     Bloco *novo = h->proximo;
     CHECAR(h->tamanho == 104);
     CHECAR(novo != NULL);
-    if (novo == NULL) return;
     CHECAR((char *)novo - (char *)h == 104 + TAM_CAB); /* offset 144 */
     CHECAR(novo->livre == 1);
     CHECAR(novo->tamanho == 1000 - TAM_CAB - 104 - TAM_CAB);
@@ -106,7 +101,6 @@ void teste_splitting(void) {
     mem_init(1000);
     void *q = meu_malloc(920);
     CHECAR(q != NULL);
-    if (q == NULL) return;
     CHECAR(CAB(q)->tamanho == 1000 - TAM_CAB);
     CHECAR(CAB(q)->proximo == NULL);
     CHECAR(estatisticas.frag_interna == 40); /* sobra não dividida conta como interna */
@@ -130,7 +124,6 @@ void teste_coalescencia(void) {
     void *b = meu_malloc(100);
     void *c = meu_malloc(100);
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a == NULL || b == NULL || c == NULL) return;
 
     meu_free(a);
     meu_free(b); /* caso 3: anterior livre -> funde com A */
@@ -151,13 +144,11 @@ void teste_coalescencia(void) {
     b = meu_malloc(100);
     c = meu_malloc(100);
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a != NULL && b != NULL && c != NULL) {
-        meu_free(a);
-        meu_free(b);
-        CHECAR(CAB(a)->tamanho == 104);
-        CHECAR(CAB(a)->proximo == CAB(b));
-        CHECAR(CAB(b)->livre == 1);
-    }
+    meu_free(a);
+    meu_free(b);
+    CHECAR(CAB(a)->tamanho == 104);
+    CHECAR(CAB(a)->proximo == CAB(b));
+    CHECAR(CAB(b)->livre == 1);
     coalescencia_ativa = 1;
 }
 
@@ -173,7 +164,6 @@ void teste_alinhamento(void) {
     void *p1 = meu_malloc(1);
     void *p2 = meu_malloc(13);
     CHECAR(p1 != NULL && p2 != NULL);
-    if (p1 == NULL || p2 == NULL) return;
     CHECAR((size_t)p1 % ALINHAMENTO == 0);
     CHECAR((size_t)p2 % ALINHAMENTO == 0);
     CHECAR(CAB(p1)->tamanho == 8);
@@ -210,7 +200,6 @@ void teste_sem_memoria(void) {
     void *b = meu_malloc(280);
     void *c = meu_malloc(280); /* sobra de 40: não divide, C fica com 320 */
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a == NULL || b == NULL || c == NULL) return;
     CHECAR(CAB(c)->tamanho == 320);
     meu_free(a);
     meu_free(c);
@@ -226,7 +215,6 @@ void teste_ponteiro_invalido(void) {
     char *a = meu_malloc(100);
     void *b = meu_malloc(100);
     CHECAR(a != NULL && b != NULL);
-    if (a == NULL || b == NULL) return;
     size_t frag_antes = estatisticas.frag_interna;
     int local;
 
@@ -246,7 +234,6 @@ void teste_double_free(void) {
     void *b = meu_malloc(100);
     void *c = meu_malloc(100);
     CHECAR(a != NULL && b != NULL && c != NULL);
-    if (a == NULL || b == NULL || c == NULL) return;
 
     meu_free(b);
     CHECAR(ultimo_status == ALOC_OK);
@@ -272,7 +259,6 @@ void teste_estrategias(void) {
         char *livre2 = meu_malloc(56);
         char *sep2   = meu_malloc(8);
         CHECAR(livre1 != NULL && sep1 != NULL && livre2 != NULL && sep2 != NULL);
-        if (livre1 == NULL || sep1 == NULL || livre2 == NULL || sep2 == NULL) break;
         char *livre3 = sep2 + 8 + TAM_CAB; /* dados do bloco livre final (624 bytes) */
         meu_free(livre1);
         meu_free(livre2);
@@ -295,7 +281,6 @@ void teste_next_fit(void) {
     void *sep = meu_malloc(8); /* separador ocupado: impede a fusão */
     char *fim = (char *)sep + 8 + TAM_CAB; /* dados do bloco livre do fim (760 bytes) */
     CHECAR(a != NULL && sep != NULL);
-    if (a == NULL || sep == NULL) return;
     meu_free(a);
     char *p = meu_malloc(40);
     CHECAR(p == fim);
@@ -313,7 +298,6 @@ void teste_next_fit(void) {
     void *x = meu_malloc(100);
     void *y = meu_malloc(100); /* o next-fit guarda y */
     CHECAR(x != NULL && y != NULL);
-    if (x == NULL || y == NULL) return;
     meu_free(x);
     meu_free(y); /* y é fundido em x */
     CHECAR(meu_malloc(8) == x);
