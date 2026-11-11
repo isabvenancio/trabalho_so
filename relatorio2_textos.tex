@@ -1,0 +1,412 @@
+% =====================================================================
+% TEXTOS PARA O RELATÓRIO 2 (Overleaf, modelo SBC)
+% Arquivo só para copiar e colar: não precisa ir para o repositório.
+%
+% IMAGENS: suba no Overleaf estes arquivos de resultados/ (mesmos nomes):
+%   workload2_frag_externa.png, coalescencia.png, escala.png,
+%   barra_heap.png, tempo_malloc.png, min_dados.png
+%
+% CITAÇÕES: troque as chaves \cite{...} pelas chaves que vocês já usam no
+% .bib do relatório 1 (ex.: wilson1995 = [Wilson et al. 1995]).
+% As referências novas estão na PARTE C, no fim deste arquivo.
+%
+% TAMANHO: o roteiro recomenda de 5 a 8 páginas. Se passar, a figura
+% barra_heap.png (marcada como OPCIONAL) é a primeira candidata a sair.
+% =====================================================================
+
+
+% =====================================================================
+% PARTE A — CORREÇÕES NAS SEÇÕES QUE JÁ EXISTEM NO RELATÓRIO 1
+% =====================================================================
+
+% ---------------------------------------------------------------------
+% A.1 Introdução: troque a última frase do segundo parágrafo
+% ("Aliás, posteriormente, faremos uma avaliação experimental...") por:
+% ---------------------------------------------------------------------
+Além disso, realizamos uma avaliação experimental das estratégias First-Fit,
+Best-Fit, Worst-Fit e Next-Fit, considerando indicadores de fragmentação,
+taxa de falha e o custo das operações, com e sem coalescência de blocos.
+
+% ---------------------------------------------------------------------
+% A.2 Seção 3.1 (Ambiente): acrescente estes itens à lista
+% ---------------------------------------------------------------------
+\item Bibliotecas Python: Pandas, NumPy e Matplotlib;
+\item Ferramentas de verificação: Valgrind e AddressSanitizer;
+\item Flags de compilação: \texttt{-Wall -Wextra -g -std=c11}.
+
+% ---------------------------------------------------------------------
+% A.3 Seção 3.3 (Estrutura dos metadados): substitua o código e a lista
+% (mantenha o mesmo ambiente de código colorido do relatório 1; aqui está
+%  em verbatim só para facilitar a cópia do conteúdo)
+% ---------------------------------------------------------------------
+\begin{verbatim}
+typedef struct bloco {
+    size_t tamanho;
+    size_t pedido;
+    int livre;
+    struct bloco* proximo;
+    struct bloco* anterior;
+} Bloco;
+\end{verbatim}
+
+\begin{itemize}
+    \item \texttt{size\_t tamanho}: quantidade de bytes de dados do bloco, sem contar o cabeçalho. Ocupa 8 bytes.
+    \item \texttt{size\_t pedido}: quantidade de bytes que o usuário realmente pediu. É usado apenas nas estatísticas, pois \texttt{tamanho - pedido} é a fragmentação interna do bloco. Ocupa 8 bytes.
+    \item \texttt{int livre}: funciona como uma flag (1 significa livre e 0 significa ocupado). Ocupa 4 bytes, e o compilador acrescenta mais 4 bytes de preenchimento para que o ponteiro seguinte fique alinhado.
+    \item \texttt{bloco* proximo}: ponteiro para o próximo bloco. Ocupa 8 bytes.
+    \item \texttt{bloco* anterior}: ponteiro para o bloco anterior. Ocupa 8 bytes.
+\end{itemize}
+
+% e troque a frase "O tamanho total dos metadados é 32 bytes..." por:
+O tamanho total dos metadados é 40 bytes em sistemas de 64 bits. Em relação à
+estrutura planejada no relatório inicial, o campo \texttt{padding[4]} foi
+substituído pelo campo \texttt{pedido}, necessário para descontar a
+fragmentação interna de um bloco no momento em que ele é liberado.
+
+% ---------------------------------------------------------------------
+% A.4 Seção 3.7 (Tratamento de erros): acrescente à lista e ao texto
+% ---------------------------------------------------------------------
+\item \texttt{ERR\_FRAGMENTATION}: há espaço livre suficiente somando todos os blocos livres, mas nenhum bloco contíguo grande o bastante para atender à requisição.
+
+% parágrafo depois da lista:
+Cada erro imprime uma mensagem na saída de erro padrão e é registrado na
+variável global \texttt{ultimo\_status}, que guarda o resultado da última
+chamada de \texttt{meu\_malloc} ou \texttt{meu\_free}. Assim, os testes
+automatizados conseguem verificar o tipo de erro sem depender do texto
+impresso. A falha por pedido maior que o heap inteiro é tratada como
+\texttt{ERR\_OUT\_OF\_MEMORY}.
+
+% ---------------------------------------------------------------------
+% A.5 Seção 3.8 (Métricas), parágrafo da taxa de falha: troque por
+% ---------------------------------------------------------------------
+O total\_solicitacoes é incrementado em toda chamada de alocação com tamanho
+maior que zero. Toda alocação que retorna NULL é contada como falha, e as
+falhas em que total\_espaco\_livre $\geq$ tamanho\_pedido são contadas também
+em separado, como falhas por fragmentação externa. Dessa forma é possível
+distinguir a falta real de memória da falha causada apenas pela fragmentação.
+
+% ---------------------------------------------------------------------
+% A.6 Seção 3.9 (Organização do projeto): substitua a lista
+% ---------------------------------------------------------------------
+\begin{itemize}
+    \item \texttt{alocador.h} / \texttt{alocador.c}: estrutura do bloco, constantes, funções principais, splitting e coalescência.
+    \item \texttt{estrategias.h} / \texttt{estrategias.c}: buscas First-Fit, Next-Fit, Best-Fit e Worst-Fit, escolhidas pela variável global \texttt{estrategia\_atual}.
+    \item \texttt{estatisticas.h} / \texttt{estatisticas.c}: contadores das métricas, medição de tempo e gravação das linhas do CSV.
+    \item \texttt{testes.c}: testes básicos obrigatórios de funcionamento.
+    \item \texttt{driver.c}: lê comandos (\texttt{ALLOC}, \texttt{FREE}, \texttt{DUMP}, \texttt{STATS}) de um arquivo; os cenários de \texttt{exemplos/} são comparados com a saída esperada.
+    \item \texttt{workload1.c}, \texttt{workload2.c} e \texttt{workload3.c}: os três padrões de teste descritos na Seção~\ref{sec:experimentos}.
+    \item \texttt{referencia\_malloc.c} e \texttt{min\_dados.c}: experimentos complementares (comparação com o \texttt{malloc} real e efeito do tamanho mínimo de divisão).
+    \item \texttt{analise.py}: lê os CSVs de \texttt{resultados/} e gera as tabelas e os gráficos.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+% A.7 Seção 3.10 (Funções principais): acrescente ao código e à lista
+% ---------------------------------------------------------------------
+void  mem_destroy(void);
+
+\item \texttt{void mem\_destroy(void)}: devolve ao sistema operacional a região reservada por \texttt{mem\_init}. Também é chamada no início de \texttt{mem\_init}, para que uma reinicialização não deixe o heap anterior vazando.
+
+% e acrescente ao fim da seção:
+A coalescência pode ser desligada pela variável global
+\texttt{coalescencia\_ativa}, o que permite repetir o mesmo workload com e sem
+a fusão de blocos.
+
+% ---------------------------------------------------------------------
+% A.8 Seção 4 (Conclusão) do relatório 1: apague e use a Seção 6 da PARTE B.
+% (corrige também os erros "estrutuda" e "worloads")
+% ---------------------------------------------------------------------
+
+
+% =====================================================================
+% PARTE B — SEÇÕES NOVAS (colar depois da Seção 3.10)
+% =====================================================================
+
+\subsection{Implementação e decisões de projeto}
+
+A busca por bloco livre foi separada da lógica de alocação: \texttt{meu\_malloc}
+alinha o tamanho pedido, chama a função \texttt{buscar}, que executa a
+estratégia indicada por \texttt{estrategia\_atual}, e depois realiza o
+splitting. As quatro buscas percorrem a mesma lista implícita e contam cada
+bloco inspecionado, o que alimenta a métrica de operações por alocação. Além
+das três estratégias exigidas, foi implementada a Next-Fit, que recomeça a
+busca a partir do bloco em que a busca anterior terminou.
+
+Algumas decisões de projeto merecem destaque:
+
+\begin{itemize}
+    \item \textbf{Tamanho mínimo de divisão:} o bloco só é dividido quando a sobra comporta um cabeçalho e pelo menos \texttt{MIN\_DADOS} = 8 bytes de dados. Caso contrário, o bloco é entregue inteiro e a sobra é contabilizada como fragmentação interna.
+    \item \textbf{Desempate:} no Best-Fit e no Worst-Fit, quando dois blocos têm o mesmo tamanho, é escolhido o de menor endereço, o primeiro encontrado na lista.
+    \item \textbf{Validação de ponteiro:} além de verificar se o endereço está dentro do heap, \texttt{meu\_free} percorre a lista para confirmar que o endereço é o início dos dados de um bloco, com custo $O(n)$.
+    \item \textbf{Next-Fit e coalescência:} quando o bloco guardado pela Next-Fit é absorvido por uma fusão, a busca passa a recomeçar do bloco que o absorveu.
+    \item \textbf{Consistência:} \texttt{mem\_dump} confere, para cada bloco, se \texttt{proximo->anterior} aponta de volta e se o fim do bloco coincide com o início do próximo, emitindo um alerta caso contrário.
+\end{itemize}
+
+\subsection{Validação}
+
+A corretude foi verificada de três formas. Primeiro, o programa
+\texttt{testes.c} executa 102 verificações automáticas, cobrindo inicialização,
+alinhamento, splitting (inclusive o caso em que a sobra é pequena demais),
+coalescência ligada e desligada, a escolha de cada estratégia, heap não
+inicializado, falta de memória, falha por fragmentação, ponteiro inválido e
+double free. Segundo, o programa \texttt{driver.c} executa doze cenários de
+entrada e compara a saída com o resultado esperado, entre eles os cenários do
+roteiro com Best-Fit e Worst-Fit, com e sem coalescência. Por fim, testes e
+cenários foram executados no Valgrind, sem erros de memória nem vazamentos.
+
+\subsection{Experimentos}\label{sec:experimentos}
+
+Os workloads usam semente fixa (42), de modo que todas as estratégias recebem
+exatamente a mesma sequência de pedidos, com tamanhos sorteados entre 10 e 150
+bytes:
+
+\begin{itemize}
+    \item \textbf{Workload 1:} heap de 4096 bytes e alocações sequenciais, sem liberação, até a primeira falha.
+    \item \textbf{Workload 2:} heap de 2000 bytes e 100 operações intercaladas, sendo 60\% alocações e 40\% liberações de blocos ativos sorteados. A fragmentação externa é registrada após cada operação. O mesmo workload é repetido com heaps de 1000, 5000 e 20000 bytes e com 100, 1000 e 10000 operações para o experimento de escala.
+    \item \textbf{Workload 3:} vinte blocos de 64 bytes ocupando o heap inteiro; os blocos de índice par são liberados e é feito um pedido de 640 bytes, a soma dos buracos. Depois, os blocos ímpares também são liberados e o pedido é repetido.
+\end{itemize}
+
+Os workloads 2 e 3 foram executados com a coalescência ligada e desligada. Os
+resultados de cada operação são gravados em \texttt{resultados/comparativo.csv}
+e analisados pelo script \texttt{analise.py}.
+
+
+\section{Resultados Experimentais}
+
+A Tabela~\ref{tab:resumo} resume o estado final de cada workload com a
+coalescência ligada. Como os contadores são acumulados ao longo da execução,
+os valores correspondem à última operação; a fragmentação externa é a média ao
+longo de todas as operações.
+
+\begin{table}[ht]
+\centering
+\caption{Resumo por workload e estratégia (coalescência ligada).}
+\label{tab:resumo}
+\begin{tabular}{llrrrrr}
+\hline
+Workload & Estratégia & Aloc. OK & Falhas & Frag. ext. (\%) & Maior livre & Exam./aloc. \\
+\hline
+1 & First-Fit & 33 & 1 & 0,0 & 0 & 17,47 \\
+1 & Next-Fit  & 33 & 1 & 0,0 & 0 & 2,88 \\
+1 & Best-Fit  & 33 & 1 & 0,0 & 0 & 17,47 \\
+1 & Worst-Fit & 33 & 1 & 0,0 & 0 & 17,47 \\
+\hline
+2 & First-Fit & 46 & 22 & 21,4 & 80  & 11,59 \\
+2 & Next-Fit  & 47 & 21 & 42,7 & 128 & 7,85 \\
+2 & Best-Fit  & 46 & 22 & 11,5 & 80  & 13,40 \\
+2 & Worst-Fit & 48 & 20 & 40,9 & 48  & 14,87 \\
+\hline
+3 & First-Fit & 21 & 1 & 24,2 & 1360 & 10,50 \\
+3 & Next-Fit  & 21 & 1 & 24,2 & 1360 & 2,73 \\
+3 & Best-Fit  & 21 & 1 & 24,2 & 1360 & 10,50 \\
+3 & Worst-Fit & 21 & 1 & 24,2 & 1360 & 10,50 \\
+\hline
+\end{tabular}
+\end{table}
+
+No Workload 1, todas as estratégias realizaram 33 alocações antes da primeira
+falha, com 131 bytes de fragmentação interna e 1320 bytes gastos com
+cabeçalhos, o equivalente a 32,2\% do heap. Como nenhum bloco é liberado, só
+existe um bloco livre, o do fim do heap, e todas as estratégias o escolhem.
+A única diferença é o custo: First-Fit, Best-Fit e Worst-Fit percorrem a lista
+inteira até o último bloco, enquanto a Next-Fit começa a busca no ponto em que
+parou e examina em média 2,88 blocos por alocação.
+
+No Workload 2, a fragmentação externa variou bastante ao longo das operações
+(Figura~\ref{fig:w2}). O Best-Fit manteve a menor fragmentação externa média
+(11,5\%), seguido pelo First-Fit (21,4\%), enquanto Worst-Fit e Next-Fit
+ficaram acima de 40\%. A taxa de falha foi parecida entre as estratégias,
+entre 29,4\% e 32,4\% dos 68 pedidos, já que o heap de 2000 bytes é pequeno
+para a quantidade de alocações.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{workload2_frag_externa.png}
+\caption{Fragmentação externa ao longo das operações do Workload 2 (coalescência ligada).}
+\label{fig:w2}
+\end{figure}
+
+No Workload 3, o pedido de 640 bytes falhou para todas as estratégias com
+fragmentação externa de 90\%: havia 640 bytes livres, mas o maior bloco livre
+tinha apenas 64 bytes. Com a coalescência ligada, a liberação dos blocos
+ímpares uniu todo o heap em um único bloco e o segundo pedido foi atendido;
+sem coalescência, o segundo pedido também falhou, mesmo com o heap totalmente
+livre (Figura~\ref{fig:coal}).
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{coalescencia.png}
+\caption{Coalescência ligada e desligada: fragmentação externa média no Workload 2 e falhas no Workload 3.}
+\label{fig:coal}
+\end{figure}
+
+A Tabela~\ref{tab:coal} mostra o efeito da coalescência na fragmentação
+externa média do Workload 2.
+
+\begin{table}[ht]
+\centering
+\caption{Fragmentação externa média no Workload 2 (\%).}
+\label{tab:coal}
+\begin{tabular}{lrr}
+\hline
+Estratégia & Sem coalescência & Com coalescência \\
+\hline
+First-Fit & 48,1 & 21,4 \\
+Next-Fit  & 57,1 & 42,7 \\
+Best-Fit  & 40,3 & 11,5 \\
+Worst-Fit & 67,1 & 40,9 \\
+\hline
+\end{tabular}
+\end{table}
+
+O experimento de escala (Figura~\ref{fig:escala}) mostra que o custo da busca
+cresce com o tamanho do heap e com o número de operações, porque mais blocos
+passam a existir na lista. Com heap de 20000 bytes e 10000 operações, o
+Worst-Fit examinou em média 180,3 blocos por alocação, o Best-Fit 163,4, o
+First-Fit 109,9 e o Next-Fit 73,6. Com heap de 1000 bytes, todas as estratégias
+ficaram entre 5 e 8 blocos.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{escala.png}
+\caption{Blocos examinados por alocação em função do tamanho do heap e do número de operações.}
+\label{fig:escala}
+\end{figure}
+
+% ---- FIGURA OPCIONAL (primeira a sair se o relatório passar de 8 páginas) ----
+A Figura~\ref{fig:barra} mostra o heap no fim de cada workload, com os blocos
+livres em verde e os ocupados em laranja. No Workload 3 sem coalescência, o
+heap termina totalmente livre, porém dividido em vinte blocos de 64 bytes.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{barra_heap.png}
+\caption{Estado final do heap em cada workload e estratégia.}
+\label{fig:barra}
+\end{figure}
+% ---- fim da figura opcional ----
+
+O tempo de cada operação foi medido com \texttt{clock\_gettime(CLOCK\_MONOTONIC\_RAW)}.
+Nos workloads, a mediana do tempo de alocação foi de 80 ns no Next-Fit,
+131 ns no First-Fit, 150 ns no Worst-Fit e 151 ns no Best-Fit, com percentil 95
+entre 170 e 300 ns; a liberação ficou entre 95 e 110 ns de mediana. Na
+comparação com o \texttt{malloc} da biblioteca padrão (Figura~\ref{fig:malloc}),
+usando um heap de 1 MiB e 2000 operações, o \texttt{malloc} real levou cerca de
+50 ns por operação, enquanto o nosso alocador levou de 551 ns (First-Fit) a
+1753 ns (Worst-Fit) por alocação. A exceção foi a Next-Fit, com 50 ns, porque
+nesse cenário quase sempre encontra espaço logo no bloco em que parou.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{tempo_malloc.png}
+\caption{Tempo por operação (p50 e p95) do nosso alocador e do \texttt{malloc} real.}
+\label{fig:malloc}
+\end{figure}
+
+
+\section{Discussão}
+
+\textbf{Qual estratégia apresentou menor fragmentação externa no padrão
+adversarial?} No Workload 3, as quatro estratégias tiveram exatamente o mesmo
+resultado: 90\% de fragmentação externa no momento do pedido grande. Como todos
+os buracos têm o mesmo tamanho (64 bytes) e o pedido não cabe em nenhum, não há
+escolha a fazer, e a falha é causada pelo padrão de uso, não pela estratégia. A
+comparação entre estratégias aparece no Workload 2, no qual o Best-Fit teve a
+menor fragmentação externa média (11,5\%). Isso confirma a teoria apenas em
+parte: o Best-Fit de fato deixa sobras pequenas, mas, por escolher o menor
+bloco que serve, preserva os blocos grandes. Como a métrica usada é
+$1 - \mbox{maior\_livre}/\mbox{total\_livre}$, preservar o maior bloco mantém a
+fragmentação baixa. O Worst-Fit, ao contrário, sempre corta o maior bloco e
+obteve a maior fragmentação externa média (40,9\%) \cite{wilson1995}.
+
+\textbf{Qual o custo de cada estratégia à medida que o heap fica mais
+fragmentado?} Todas as estratégias são $O(n)$ no número de blocos, mas Best-Fit
+e Worst-Fit sempre percorrem a lista inteira, enquanto o First-Fit para no
+primeiro bloco que serve. Por isso, no experimento de escala, o First-Fit
+examinou cerca de 33\% menos blocos que o Best-Fit e 39\% menos que o
+Worst-Fit no maior heap. A Next-Fit foi a mais barata por não recomeçar sempre
+do início, mas teve fragmentação externa mais alta, pois espalha as alocações
+pelo heap.
+
+\textbf{Como a coalescência afeta os resultados?} Sem coalescência, a
+fragmentação externa média do Workload 2 aumentou para todas as estratégias,
+chegando a 67,1\% no Worst-Fit, e no Workload 3 o pedido final falhou mesmo com
+todo o heap livre. A coalescência também muda a escolha das estratégias: no
+cenário 5 do roteiro, com Best-Fit sem coalescência, o pedido de 40 bytes usou
+o buraco de 56 bytes; com coalescência, esse buraco havia se fundido com o
+bloco livre do fim (576 bytes), e o Best-Fit passou a escolher o bloco de 104
+bytes. Já no cenário 6, o Worst-Fit escolheu o bloco do fim e deixou uma sobra
+grande, de 400 bytes, reaproveitável.
+
+\textbf{Qual o tamanho do cabeçalho e o overhead de metadados?} O cabeçalho tem
+40 bytes. No Workload 1, com blocos de 10 a 150 bytes, os cabeçalhos ocuparam
+32,2\% do heap. O overhead poderia ser reduzido removendo o campo
+\texttt{pedido}, usado apenas nas estatísticas (32 bytes); guardando o estado
+livre/ocupado no bit menos significativo de \texttt{tamanho}, que é sempre
+múltiplo de 8 (24 bytes); ou usando \textit{boundary tags} no lugar dos
+ponteiros \cite{knuth1997}.
+
+\textbf{Qual o valor de tamanho mínimo de divisão e o seu efeito?} Foi escolhido
+\texttt{MIN\_DADOS} = 8 bytes, o menor bloco alinhado possível. Para avaliar a
+escolha, o padrão do Workload 2 foi executado com 1000 operações e 30 sementes
+para os valores 8, 32, 64 e 128 (Figura~\ref{fig:mindados}). Ao passar de 8 para
+128 bytes, a fragmentação interna média do Best-Fit subiu de 151 para 443
+bytes, porque mais sobras deixam de virar blocos, enquanto a fragmentação
+externa caiu de 31,8\% para 14,1\%, já que surgem menos blocos livres pequenos.
+A taxa de falha praticamente não mudou (de 32,3\% para 33,0\%). O valor 8 foi
+mantido por minimizar a fragmentação interna.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{min_dados.png}
+\caption{Efeito do tamanho mínimo de divisão (média de 30 sementes).}
+\label{fig:mindados}
+\end{figure}
+
+\textbf{Como o alocador detecta double free e ponteiros inválidos?} O ponteiro
+é inválido se estiver fora dos limites do heap ou se, ao percorrer a lista, não
+corresponder ao início dos dados de nenhum bloco. O double free é detectado
+pela flag \texttt{livre} do cabeçalho. Há limites: a validação custa $O(n)$; o
+uso após a liberação (\textit{use after free}) não é detectado; um bloco
+liberado que já foi fundido ao anterior é acusado como ponteiro inválido, e não
+como double free; e, se um novo bloco for criado exatamente no mesmo endereço,
+um ponteiro antigo liberaria o bloco novo sem que o erro fosse percebido.
+
+
+\section{Conclusão}
+
+Neste trabalho foi implementado um alocador de memória customizado sobre um
+heap simulado, com lista duplamente encadeada de blocos, alinhamento de 8
+bytes, splitting, coalescência e as estratégias First-Fit, Best-Fit, Worst-Fit e
+Next-Fit. A corretude foi verificada por 102 testes automáticos, doze cenários
+de entrada e execução no Valgrind.
+
+Os experimentos mostraram que nenhuma estratégia é superior em todos os
+aspectos: o Best-Fit obteve a menor fragmentação externa no padrão aleatório,
+o First-Fit teve custo menor que Best-Fit e Worst-Fit por parar cedo, e a
+Next-Fit foi a mais rápida, porém com maior fragmentação. A coalescência se
+mostrou o fator de maior impacto, reduzindo a fragmentação externa em todas as
+estratégias e sendo indispensável no padrão adversarial.
+
+Entre as principais dificuldades estiveram a manutenção correta dos quatro
+ponteiros no splitting e na fusão de blocos e a validação de ponteiros
+inválidos. Como limitações, o heap tem tamanho fixo, a validação de ponteiros
+é linear e o cabeçalho de 40 bytes representa um overhead alto para blocos
+pequenos, o que poderia ser reduzido com as técnicas discutidas na Seção 5.
+
+% ---- OPCIONAL: declaração de uso de IA (o professor autorizou) ----
+% Ferramentas de inteligência artificial foram utilizadas, com autorização do
+% professor, como apoio na revisão do código e na redação deste relatório.
+
+
+% =====================================================================
+% PARTE C — REFERÊNCIAS NOVAS (colar no arquivo .bib)
+% wilson1995 já existe no relatório 1: só confira a chave.
+% =====================================================================
+%
+% @book{knuth1997,
+%   author    = {Knuth, Donald E.},
+%   title     = {The Art of Computer Programming, Volume 1: Fundamental Algorithms},
+%   edition   = {3},
+%   publisher = {Addison-Wesley},
+%   year      = {1997}
+% }
