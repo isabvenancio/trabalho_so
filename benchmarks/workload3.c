@@ -21,8 +21,8 @@ int main(void) {
     /* 1 = coalescência ligada, 0 = desligada */
     for (int c = 1; c >= 0; c--) {
         coalescencia_ativa = c;
-        for (int i = 0; i < 4; i++) { //uma vez para cada estratégia
-            estrategia_atual = estrategias[i];
+        for (int e = 0; e < 4; e++) { //uma vez para cada estratégia
+            estrategia_atual = estrategias[e];
             void *blocos[N_BLOCOS]; //ponteiros dos blocos pequenos
             int operacao = 0; //número da operação, para a coluna 'operacao' do CSV
 

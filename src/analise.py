@@ -187,7 +187,7 @@ fig.legend(handles=legenda, loc='lower center', ncol=2, frameon=False)
 plt.savefig(saida / 'barra_heap.png', dpi=150)
 plt.close()
 
-# -------------------------- COMPARAÇÃO COM O MALLOC REAL (opcional do TSO) -----------------------
+# -------------------------- COMPARAÇÃO COM O MALLOC REAL -----------------------
 print('\nTempo: nosso alocador x malloc real, mediana (p50) e percentil 95 (p95), em ns')
 tempos = pd.read_csv(saida / 'tempo_malloc.csv').groupby(['operacao', 'quem'])['tempo_ns']
 tabela_tempos = pd.DataFrame({'p50': tempos.median(), 'p95': tempos.quantile(0.95)}).reset_index()
@@ -219,7 +219,7 @@ metricas = [
     ('frag_externa_pct', 'Fragmentação externa média (%)'),
     ('taxa_falha', 'Taxa de falha (%)'),
 ]
-marcas = ['o', 's', '^', 'D'] #as marcas diferentes ajudam no daltonismo
+marcas = ['o', 's', '^', 'D'] 
 fig, eixos = plt.subplots(1, 3, figsize=(14, 4.2))
 for eixo, (coluna, titulo) in zip(eixos, metricas):
     for estrategia, marca in zip(ordem, marcas):
