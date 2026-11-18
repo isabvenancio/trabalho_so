@@ -79,6 +79,9 @@ void teste_liberacao(void) {
     CHECAR(CAB(c)->livre == 0);
     CHECAR(CAB(a)->proximo == CAB(b));
     CHECAR(CAB(b)->proximo == CAB(c));
+
+    meu_free(NULL); /* free(NULL) não faz nada e não é erro */
+    CHECAR(ultimo_status == ALOC_OK);
 }
 
 void teste_splitting(void) {

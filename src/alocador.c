@@ -61,12 +61,12 @@ void* meu_malloc(size_t tamanho){//aloca
     /* coordena alinhamento, busca, splitting*/
     /* retorna ponteiro para o bloco alocado */
     ultimo_status = ALOC_OK; //começa como "deu certo": só os erros abaixo trocam o valor
+    if (tamanho == 0) return NULL; /* pedir 0 bytes não é erro: só devolve NULL (igual ao free(NULL)) */
     if (heap_base == NULL) { //erro se o heap não foi inicializado
         fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED: chame mem_init antes de alocar\n");
         ultimo_status = ERR_HEAP_NOT_INITIALIZED;
         return NULL;
     }
-    if (tamanho == 0) return NULL; /* pedir 0 bytes não é erro: só devolve NULL */
 
     estatisticas.n_malloc++; //conta o pedido
     if (tamanho > heap_total) { //se o pedido for maior que o heap inteiro, é falha imediata
@@ -168,7 +168,7 @@ void mem_stats(void){
     /* exibe estatísticas da memória */
     //chama contar_blocos(), calcula e imprime as métricas. Os if evitam divisão por zero
     if (heap_base == NULL) {
-        fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED\n");
+        fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED: chame mem_init antes de ver as estatisticas\n");
         return;
     }
     contar_blocos();
@@ -198,7 +198,7 @@ void mem_dump(void){
     /* exibe o estado atual da memória (blocos atuais)*/
     //imprime uma linha por bloco: endereço (relativo ao início do heap), tamanho e LIVRE/OCUPADO
     if (heap_base == NULL) {
-        fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED\n");
+        fprintf(stderr, "ERR_HEAP_NOT_INITIALIZED: chame mem_init antes de mostrar o heap\n");
         return;
     }
     printf("%-10s %-8s %s\n", "Endereco", "Tamanho", "Estado");
