@@ -29,6 +29,7 @@ import matplotlib
 matplotlib.use('Agg')  # sem janela: os gráficos são salvos em resultados/
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 
@@ -37,7 +38,9 @@ if len(sys.argv) > 1: #o make analise passa o caminho do csv
 else:
     arq = Path('resultados/comparativo.csv') #entrada dos arquivos
 saida = arq.parent #saida dos arquivos: a mesma pasta do csv
-ordem = ['first_fit', 'next_fit', 'best_fit', 'worst_fit']
+ordem = ['First-Fit', 'Next-Fit', 'Best-Fit', 'Worst-Fit']
+#nos CSVs os nomes estão como no C (first_fit...); nos gráficos e tabelas usamos os mesmos nomes do relatório
+nomes = {'first_fit': 'First-Fit', 'next_fit': 'Next-Fit', 'best_fit': 'Best-Fit', 'worst_fit': 'Worst-Fit', 'malloc_real': 'malloc real'}
 
 def salvar(nome): #salvar os png na saida e não em janelas
     plt.tight_layout()
@@ -47,6 +50,7 @@ def salvar(nome): #salvar os png na saida e não em janelas
 
 # ----------------- PREPARAÇÃO DOS DADOS E LEITURA -----------------
 df = pd.read_csv(arq)
+df['estrategia'] = df['estrategia'].replace(nomes)
 
 # cada execução (workload + estratégia + coalescência + heap) começa na operação 1
 df['execucao'] = (df['operacao'] == 1).cumsum()
@@ -84,7 +88,6 @@ for estrategia, grupo in com_coal[com_coal['workload'] == 'workload2'].groupby('
 
 plt.xlabel('Operação')
 plt.ylabel('Fragmentação externa (%)')
-plt.title('Workload 2 — Fragmentação externa ao longo das operações')
 plt.legend()
 plt.grid(True)
 salvar('workload2_frag_externa.png')#ao inves de show()
@@ -106,11 +109,12 @@ fig, eixos = plt.subplots(1, 2, figsize=(12, 5))
 w2c = comp[comp['workload'] == 'workload2'].pivot_table(index='estrategia', columns='coalescencia', values='frag_externa_media')
 w3c = comp[comp['workload'] == 'workload3'].pivot_table(index='estrategia', columns='coalescencia', values='falhas')
 (w2c * 100).plot(kind='bar', ax=eixos[0])
-eixos[0].set_title('Workload 2 — Fragmentação externa média')
-eixos[0].set_ylabel('Fragmentação externa (%)')
+eixos[0].set_title('(a) Workload 2', loc='left')
+eixos[0].set_ylabel('Fragmentação externa média (%)')
 w3c.plot(kind='bar', ax=eixos[1])
-eixos[1].set_title('Workload 3 — Falhas de alocação')
-eixos[1].set_ylabel('Falhas')
+eixos[1].set_title('(b) Workload 3', loc='left')
+eixos[1].set_ylabel('Falhas de alocação')
+eixos[1].yaxis.set_major_locator(MaxNLocator(integer=True)) #só números inteiros: não existe meia falha
 for eixo in eixos:
     eixo.set_xlabel('Estratégia')
     eixo.tick_params(axis='x', rotation=0)
@@ -154,6 +158,7 @@ for coluna, nome in [('tempo_alloc_ns', 'alocação'), ('tempo_free_ns', 'libera
 # -------------------------- BARRA DO HEAP -----------------------
 # cada barra é o heap inteiro no fim da execução, com um retângulo para cada bloco
 blocos = pd.read_csv(saida / 'blocos.csv').drop_duplicates() #rodar um workload de novo acrescenta linhas iguais
+blocos['estrategia'] = blocos['estrategia'].replace(nomes)
 
 paineis = [ #(nome no csv, coalescência, título)
     ('workload1', 1, 'Workload 1: fim da execução'),
@@ -189,11 +194,13 @@ plt.close()
 
 # -------------------------- COMPARAÇÃO COM O MALLOC REAL -----------------------
 print('\nTempo: nosso alocador x malloc real, mediana (p50) e percentil 95 (p95), em ns')
-tempos = pd.read_csv(saida / 'tempo_malloc.csv').groupby(['operacao', 'quem'])['tempo_ns']
+tempo_malloc = pd.read_csv(saida / 'tempo_malloc.csv')
+tempo_malloc['quem'] = tempo_malloc['quem'].replace(nomes)
+tempos = tempo_malloc.groupby(['operacao', 'quem'])['tempo_ns']
 tabela_tempos = pd.DataFrame({'p50': tempos.median(), 'p95': tempos.quantile(0.95)}).reset_index()
 print(tabela_tempos.to_string(index=False))
 
-ordem_tempo = ['malloc_real'] + ordem
+ordem_tempo = ['malloc real'] + ordem
 fig, eixos = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
 for eixo, operacao in zip(eixos, ['malloc', 'free']):
     linhas = tabela_tempos[tabela_tempos['operacao'] == operacao].set_index('quem').loc[ordem_tempo]
@@ -209,6 +216,7 @@ salvar('tempo_malloc.png')
 # cada linha do csv é uma execução; a média das sementes evita depender de uma única sequência de pedidos
 print('\nEfeito do MIN_DADOS: média de 30 sementes')
 md = pd.read_csv(saida / 'min_dados.csv')
+md['estrategia'] = md['estrategia'].replace(nomes)
 md['taxa_falha'] = 100 * md['falhas'] / (md['alocacoes_ok'] + md['falhas'])
 md['frag_externa_pct'] = 100 * md['frag_externa_media']
 medias_md = md.groupby(['min_dados', 'estrategia'])[['alocacoes_ok', 'taxa_falha', 'frag_interna_media', 'frag_externa_pct', 'n_livres_medio']].mean().reset_index()
@@ -227,7 +235,7 @@ for eixo, (coluna, titulo) in zip(eixos, metricas):
         eixo.plot(grupo['min_dados'], grupo[coluna], marker=marca, label=estrategia)
     eixo.set_xticks(sorted(md['min_dados'].unique()))
     eixo.set_xlabel('MIN_DADOS (bytes)')
-    eixo.set_title(titulo, loc='left', fontsize=11)
+    eixo.set_ylabel(titulo)
     eixo.set_ylim(bottom=0)
     eixo.grid(True)
 eixos[0].legend()
